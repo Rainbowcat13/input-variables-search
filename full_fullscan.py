@@ -15,9 +15,11 @@ for i in range(1, 2 ** number_vars):
     for assumptions_with_signs in fullscan_values(assumptions, set_size):
         no_conflicts, result = g.propagate(assumptions_with_signs)
         prop_cnt += 1
-        if no_conflicts and len(result) == number_vars:
-            if set_size < len(minimal_set):
-                minimal_set = assumptions + []
+        if not no_conflicts or len(result) != number_vars:
+            break
+    else:
+        if set_size < len(minimal_set):
+            minimal_set = assumptions + []
 
 print(len(minimal_set))
 print(*minimal_set)

@@ -17,12 +17,12 @@ for count in range(1, number_vars):
         for assumption_with_signs in fullscan_values(assumption, count):
             prop_cnt += 1
             no_conflicts, result = g.propagate(assumption_with_signs)
-            if no_conflicts and len(result) == number_vars:
-                print(count)
-                print(*assumption)
-                found = True
+            if not no_conflicts or len(result) != number_vars:
                 break
-        if found:
+        else:
+            found = True
+            print(len(assumption))
+            print(*assumption)
             break
 
     if found:

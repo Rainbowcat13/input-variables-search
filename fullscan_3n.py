@@ -13,18 +13,20 @@ g = Glucose3(formula.clauses)
 found = False
 prop_cnt = 0
 minimal_set = [i + 1 for i in range(number_vars)]
+miss_count = dict()
 
 
 def scan(n, generated):
     global prop_cnt, minimal_set
 
     if len(generated) == n:
-        prop_cnt += 1
         assumption = [generated[i] * (i + 1) for i in range(n) if generated[i]]
+        key = frozenset(map(abs, assumption))
+        if miss_count.get(key) is not None:
+            return
         no_conflicts, result = g.propagate(assumption)
-        if no_conflicts and len(result) == number_vars:
-            if len(minimal_set) > len(assumption):
-                minimal_set = [abs(x) for x in assumption]
+        if not no_conflicts or len(result) != number_vars:
+            miss_count[key] = True
         return
 
     for var_value in range(-1, 2):
@@ -34,6 +36,11 @@ def scan(n, generated):
 
 
 scan(number_vars, [])
+for i in range(2 ** number_vars):
+    assumptions = [j + 1 for j in range(number_vars) if (2 ** j) & i]
+    if miss_count.get(frozenset(assumptions)) is None and len(assumptions) < len(minimal_set):
+        minimal_set = assumptions + []
+
 print(len(minimal_set))
 print(*minimal_set)
 print(f'Complexity: {prop_cnt}')
