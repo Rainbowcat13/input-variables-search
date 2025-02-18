@@ -3,6 +3,8 @@ import sys
 from pysat.formula import CNF
 from pysat.solvers import Glucose3
 
+from util import assumption_key
+
 
 sys.setrecursionlimit(10 ** 9)
 
@@ -21,10 +23,11 @@ def scan(n, generated):
 
     if len(generated) == n:
         assumption = [generated[i] * (i + 1) for i in range(n) if generated[i]]
-        key = frozenset(map(abs, assumption))
+        key = frozenset(assumption_key(assumption))
         if miss_count.get(key) is not None:
             return
         no_conflicts, result = g.propagate(assumption)
+        prop_cnt += 1
         if not no_conflicts or len(result) != number_vars:
             miss_count[key] = True
         return
