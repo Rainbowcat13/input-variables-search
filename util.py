@@ -25,7 +25,7 @@ def precount_set_order(formula: CNF, solver: Glucose3, level=2):
 
     assumptions_with_result_powers = list(zip(assumptions, outputs))
     assumptions_with_result_powers.sort(key=lambda item: -item[1])
-    return [item[0] for item in assumptions_with_result_powers]
+    return [list(item[0]) for item in assumptions_with_result_powers]
 
 
 if __name__ == '__main__':
