@@ -1,7 +1,7 @@
 from pysat.formula import CNF
 from pysat.solvers import Glucose3
 
-from util import assumption_key, precount_set_order
+from util import assumption_key, precount_set_order, var_frequency
 
 formula = CNF(from_file='formula.cnf')
 number_vars = formula.nv
@@ -13,7 +13,8 @@ prop_cnt = 0
 # не перебирать никакие наборы, содержащие этот
 
 
-def scan(not_used, assumption):
+def scan(not_used: dict[int, int], assumption: list[int]):
+    # используем dict в not_used для сохранения порядка перебора
     global prop_cnt
     fs_key = frozenset(assumption)
 
@@ -31,12 +32,14 @@ def scan(not_used, assumption):
         if len(result) < number_vars:
             non_output.add(abs_key)
 
-    for var_num in not_used:
+    for var_num, var_freq in not_used.items():
         for sign in [1, -1]:
             assumption.append(sign * var_num)
-            not_used.remove(var_num)
-            scan(not_used, assumption)
-            not_used.add(var_num)
+            new_not_used = not_used.copy()
+            new_not_used.pop(var_num)
+            scan(new_not_used, assumption)
+            not_used[var_num] = var_freq
+            new_not_used.clear()
             assumption.pop()
 
     controversions_or_scanned.add(fs_key)
@@ -54,7 +57,9 @@ def find_minimal(start_level=0):
     return minimal_set
 
 
-not_used_start = set(range(1, number_vars + 1))
+not_used_start = var_frequency(formula)
+# Возможно, если брать переменные не в случайном порядке, а пытаться перебрать сначала те, которые встречаются чаще,
+# удовлетворительное решение найдется быстрее
 scan(not_used_start, [])
 answer = find_minimal()
 
@@ -72,9 +77,9 @@ controversions_or_scanned.clear()
 non_output.clear()
 prop_cnt = 0
 
-not_used = {i + 1 for i in range(1, number_vars + 1)}
+not_used = var_frequency(formula)
 for assumption in scan_order:
-    scan(not_used - set(assumption), assumption)
+    scan({key: value for key, value in not_used.items() if key not in assumption}, assumption)
     # Здесь, после того как нашли какое-то решение, удовлетворяющее по размеру, можно отрубить дальнейший поиск
     # Можно ли это распараллелить? Кажется, да, есть две мапы и целое число, зашаренные между вызовами
     # Не в питоне, разумеется

@@ -2,6 +2,7 @@ from pysat.formula import CNF
 from pysat.solvers import Glucose3
 
 from itertools import combinations
+from collections import Counter
 
 
 def fullscan_values(assumption, set_size):
@@ -28,7 +29,13 @@ def precount_set_order(formula: CNF, solver: Glucose3, level=2):
     return [list(item[0]) for item in assumptions_with_result_powers]
 
 
+def var_frequency(formula: CNF):
+    counter = Counter(assumption_key(sum(formula.clauses, [])))
+    return {var_name: count for (var_name, count) in counter.most_common()}
+
+
 if __name__ == '__main__':
     formula = CNF(from_file='formula.cnf')
     g = Glucose3(formula.clauses)
     print(precount_set_order(formula, g, level=3))
+    print(var_frequency(formula))
