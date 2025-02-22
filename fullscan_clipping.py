@@ -31,6 +31,11 @@ def scan(not_used: dict[int, int], assumption: list[int]):
             return
         if len(result) < number_vars:
             non_output.add(abs_key)
+        # Если какая-то переменная вывелась из текущей подстановки, нам не нужно перебирать ее значение далее
+        # Почему-то это делает только хуже на методе с предподсчетом
+        for var_num in result:
+            if var_num in not_used:
+                not_used.pop(var_num)
 
     for var_num, var_freq in not_used.items():
         for sign in [1, -1]:
