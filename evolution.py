@@ -1,4 +1,5 @@
 import random
+import sys
 
 from pysat.formula import CNF
 from pysat.solvers import Glucose3
@@ -7,12 +8,16 @@ from pysat.solvers import Glucose3
 random.seed(13)
 
 START_SIZE = 3
-POPULATION_SIZE = 100
+POPULATION_SIZE = 1
 ESTIMATION_VECTORS_COUNT = 1000
 ELEMENT_MUTATION_RATE = 0.01
 GENERATIONS_COUNT = 10
 
-formula = CNF(from_file='formula.cnf')
+formula_filename = 'formula.cnf'
+if len(sys.argv) > 1:
+    formula_filename = sys.argv[1]
+
+formula = CNF(from_file=formula_filename)
 number_vars = formula.nv
 g = Glucose3(formula.clauses)
 

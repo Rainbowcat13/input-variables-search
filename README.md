@@ -8,7 +8,13 @@
 
 ### Установка
 
-`pip install -r requirements.txt`
+```
+git pull --recurse-submodules
+cd abc
+make
+cd ..
+pip install -r requirements.txt
+```
 
 ## Решения
 

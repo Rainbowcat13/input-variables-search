@@ -1,10 +1,15 @@
+import sys
 from itertools import combinations
 from util import fullscan_values
 from pysat.formula import CNF
 from pysat.solvers import Glucose3
 
 
-formula = CNF(from_file='formula.cnf')
+formula_filename = 'formula.cnf'
+if len(sys.argv) > 1:
+    formula_filename = sys.argv[1]
+
+formula = CNF(from_file=formula_filename)
 number_vars = formula.nv
 g = Glucose3(formula.clauses)
 found = False
