@@ -18,11 +18,16 @@ blif_files = [
 
 for blf in blif_files:
     cnf_filename = f'{blf.split("/")[-1].split(".")[0]}.cnf'
+    map_filename = cnf_filename.replace('.cnf.', '.map')
     if os.path.exists(f'{output_dir}/{cnf_filename}'):
         print(f'File {cnf_filename} already exists. To regenerate clear {output_dir}.')
     else:
         print(f'\nConverting {blf}...')
-        os.system(f'abc/abc -c "read_blif {blf}; strash; write_cnf {output_dir}/{cnf_filename}"')
+        os.system(
+            f'abc/abc -c "read_blif {blf};'
+            f' strash; '
+            f'write_cnf -map {output_dir}/{map_filename} {output_dir}/{cnf_filename}"'
+        )
 
 if os.path.exists('abc.history'):
     os.system('rm abc.history')

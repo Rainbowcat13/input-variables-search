@@ -1,6 +1,3 @@
-[submodule "abc"]
-	path = abc
-	url = https://github.com/berkeley-abc/abc.git
 [submodule "benchmarks"]
 	path = benchmarks
 	url = https://github.com/lsils/benchmarks.git
