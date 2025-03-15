@@ -7,7 +7,7 @@ from pysat.solvers import Glucose3
 
 random.seed(13)
 
-START_SET_SIZE = 100
+START_SET_SIZE = 15
 POPULATION_SIZE = 1
 ESTIMATION_VECTORS_COUNT = 1000
 ELEMENT_MUTATION_RATE = 1 / START_SET_SIZE
@@ -83,4 +83,4 @@ for candidate in population:
         result = candidate + []
 
 print(len(result))
-print(*result)
+print(*sorted(result))
