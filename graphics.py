@@ -20,7 +20,7 @@ colors = {
 
 plt.figure(figsize=(12, 8), dpi=150)
 plt.xlabel('Количество переменных в стартовом множестве')
-plt.ylabel('Доля конфликтов во всех поколениях')
+plt.ylabel('Доля конфликтующих подстановок')
 plt.title('Скорость роста доли конфликтов от размера множества для некоторых схем')
 
 for file in os.listdir('stats/evolution'):
@@ -31,5 +31,6 @@ for file in os.listdir('stats/evolution'):
             xs = list(range(1, len(ratios) + 1))
             plt.plot(xs, ratios, color=colors[schema_name], label=schema_name)
 
+plt.grid(True)
 plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.07), ncol=len(wanted_schemas))
 plt.savefig(f'stats/evolution/{"_".join(wanted_schemas)}.png')
