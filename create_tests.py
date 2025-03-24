@@ -1,12 +1,37 @@
 import os
 import sys
 from pathlib import Path
+import multiprocessing
 
 import aiger
 from aiger_cnf import aig2cnf
 from pysat.formula import CNF
+from pysat.solvers import Glucose3
 
 sys.setrecursionlimit(10 ** 9)
+tc = multiprocessing.Value('i', 0)
+fc = multiprocessing.Value('i', 0)
+
+
+def try_solve(f, cnt1, cnt2):
+    global tc
+    result = Glucose3(bootstrap_with=f.clauses).solve()
+    print(f'Solved with result: {result}')
+    with cnt1.get_lock():
+        cnt1.value += int(result)
+    with cnt2.get_lock():
+        cnt2.value += (1 - int(result))
+
+
+def check_sat(f):
+    print('Try solve...')
+    p = multiprocessing.Process(target=try_solve, args=(f, tc, fc))
+    p.start()
+    p.join(10)
+    if p.is_alive():
+        print('Solving stuck, exiting')
+        p.kill()
+        p.join()
 
 
 def extract_filenames(dirs, extension):
@@ -33,6 +58,8 @@ def convert_blif(output_dir, blf):
             f' strash; '
             f'write_cnf {output_dir}/{cnf_filename}"'
         )
+        f = CNF(from_file=f'{output_dir}/{cnf_filename}')
+        check_sat(f)
 
 
 def convert_aig(output_dir, aig):
@@ -46,20 +73,15 @@ def convert_aig(output_dir, aig):
         schema = aiger.load(aig)
         cnf = aig2cnf(schema)
         inputs = list(sorted(cnf.input2lit.values()))
-        # f = CNF(from_clauses=cnf.clauses)
-        # g = Glucose3(bootstrap_with=f.clauses)
-        # print('Try solve...')
-        # if aig.endswith('adder.aig'):
-        #     print(g.solve())
-        CNF(from_clauses=cnf.clauses).to_file(f'{output_dir}/{cnf_filename}')
+        f = CNF(from_clauses=cnf.clauses)
+        f.to_file(f'{output_dir}/{cnf_filename}')
         with open(f'{output_dir}/{inputs_filename}', 'w') as inputs_file:
             inputs_file.write(f'{len(inputs)}\n{" ".join(map(str, inputs))}\n')
+        check_sat(f)
 
 
 if __name__ == '__main__':
     output_dir = 'tests'
-    if len(sys.argv) > 1:
-        output_dir = sys.argv[1]
 
     benchmarks_dirs = ['benchmarks/arithmetic', 'benchmarks/random_control']
     aig_files = extract_filenames(benchmarks_dirs, '.aig')
@@ -72,6 +94,9 @@ if __name__ == '__main__':
         files = aig_files
     for file in files:
         convert_function(output_dir, file)
+    print(f'SAT formulas: {tc.value}/{len(files)}')
+    print(f'UNSAT formulas: {fc.value}/{len(files)}')
+    print(f'Stuck formulas: {len(files) - tc.value - fc.value}/{len(files)}')
 
     if os.path.exists(f'{output_dir}/abc.history'):
         os.system(f'rm {output_dir}/abc.history')
