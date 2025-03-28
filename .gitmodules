@@ -6,7 +6,7 @@
 	url = https://github.com/yongshiwo/abc.git
 [submodule "aiger-rs"]
 	path = aiger-rs
-	url = https://github.com/Lipen/aiger-rs
+	url = https://github.com/Lipen/aiger-rs.git
 [submodule "circuition"]
 	path = circuition
 	url = https://github.com/Lipen/circuition.git
