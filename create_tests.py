@@ -2,11 +2,11 @@ import os
 import sys
 from pathlib import Path
 import multiprocessing
+import shutil
 
-import aiger
-from aiger_cnf import aig2cnf
 from pysat.formula import CNF
 from pysat.solvers import Glucose3
+import aigerox
 
 sys.setrecursionlimit(10 ** 9)
 tc = multiprocessing.Value('i', 0)
@@ -14,7 +14,6 @@ fc = multiprocessing.Value('i', 0)
 
 
 def try_solve(f, cnt1, cnt2):
-    global tc
     result = Glucose3(bootstrap_with=f.clauses).solve()
     print(f'Solved with result: {result}')
     with cnt1.get_lock():
@@ -27,7 +26,7 @@ def check_sat(f):
     print('Try solve...')
     p = multiprocessing.Process(target=try_solve, args=(f, tc, fc))
     p.start()
-    p.join(10)
+    p.join(15)
     if p.is_alive():
         print('Solving stuck, exiting')
         p.kill()
@@ -39,7 +38,7 @@ def extract_filenames(dirs, extension):
         str(file.absolute())
         for file in sum([
             list(Path(d).glob('**/*'))
-            for d in benchmarks_dirs
+            for d in dirs
         ], [])
         if file.name.endswith(extension)
     ]
@@ -63,19 +62,32 @@ def convert_blif(output_dir, blf):
 
 
 def convert_aig(output_dir, aig):
-    # Неправильно конвертирует, делая из SAT формулы UNSAT
     cnf_filename = f'{aig.split("/")[-1].split(".")[0]}.cnf'
+    aag_filename = cnf_filename.replace('.cnf', '.aag')
     inputs_filename = cnf_filename.replace('.cnf', '.inputs')
-    if os.path.exists(f'{output_dir}/{cnf_filename}'):
+
+    if not os.path.exists(f'{output_dir}/aag'):
+        os.mkdir(f'{output_dir}/aag')
+    if not os.path.exists(f'{output_dir}/aig'):
+        os.mkdir(f'{output_dir}/aig')
+    if not os.path.exists(f'{output_dir}/cnf'):
+        os.mkdir(f'{output_dir}/cnf')
+    if not os.path.exists(f'{output_dir}/inputs'):
+        os.mkdir(f'{output_dir}/inputs')
+    if os.path.exists(f'{output_dir}/cnf/{cnf_filename}'):
         print(f'File {cnf_filename} already exists. To regenerate clear {output_dir}.')
     else:
         print(f'\nConverting {aig}...')
-        schema = aiger.load(aig)
-        cnf = aig2cnf(schema)
-        inputs = list(sorted(cnf.input2lit.values()))
-        f = CNF(from_clauses=cnf.clauses)
-        f.to_file(f'{output_dir}/{cnf_filename}')
-        with open(f'{output_dir}/{inputs_filename}', 'w') as inputs_file:
+        shutil.copy(aig, f'{output_dir}/aig/')
+        os.system(f'aiger/aigtoaig {aig} {output_dir}/aag/{aag_filename}')
+        parsed_aig = aigerox.Aig.from_file(f'{output_dir}/aag/{aag_filename}')
+
+        inputs = parsed_aig.inputs()
+        aboba = parsed_aig.to_cnf()
+        inputs = list(sorted(inputs))
+        f = CNF(from_clauses=aboba)
+        f.to_file(f'{output_dir}/cnf/{cnf_filename}')
+        with open(f'{output_dir}/inputs/{inputs_filename}', 'w') as inputs_file:
             inputs_file.write(f'{len(inputs)}\n{" ".join(map(str, inputs))}\n')
         check_sat(f)
 
@@ -83,7 +95,9 @@ def convert_aig(output_dir, aig):
 if __name__ == '__main__':
     output_dir = 'tests'
 
-    benchmarks_dirs = ['benchmarks/arithmetic', 'benchmarks/random_control']
+    benchmarks_dirs = ['benchmarks/arithmetic',
+                       'benchmarks/random_control',]
+                       # 'iwls2024-ls-contest/submissions/USTC_and_Huawei/aig']
     aig_files = extract_filenames(benchmarks_dirs, '.aig')
     blif_files = extract_filenames(benchmarks_dirs, '.blif')
 

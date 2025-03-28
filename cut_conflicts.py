@@ -15,9 +15,9 @@ if len(sys.argv) > 1:
 random.seed(13)
 
 formula = CNF(from_file=formula_filename)
-g = Glucose3(formula.clauses)
-c = Cadical195(bootstrap_with=formula.clauses)
-solver = c
+# g = Glucose3(formula.clauses)
+# c = Cadical195(bootstrap_with=formula.clauses)
+# solver = c
 
 
 SIZE_UPPER_BOUND = 50
@@ -33,7 +33,14 @@ unsat_cnt = 0
 prop_cnt = 0
 core_none = 0
 
+g = Glucose3(bootstrap_with=formula.clauses)
+c = Cadical195(bootstrap_with=formula.clauses)
+
+# print(c.propagate([])[0])
+# print(g.propagate([])[0])
+
 print(c.solve())
+print(g.solve())
 
 for t in range(TRY_COUNT):
     print(f'Try count {t}')

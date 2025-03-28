@@ -4,3 +4,16 @@
 [submodule "yabc"]
 	path = abc
 	url = https://github.com/yongshiwo/abc.git
+[submodule "aiger-rs"]
+	path = aiger-rs
+	url = https://github.com/Lipen/aiger-rs
+	url = https://github.com/Lipen/circuition
+[submodule "circuition"]
+	path = circuition
+	url = https://github.com/Lipen/circuition.git
+[submodule "iwls2024-ls-contest"]
+	path = iwls2024-ls-contest
+	url = https://github.com/alanminko/iwls2024-ls-contest.git
+[submodule "aiger"]
+	path = aiger
+	url = https://github.com/arminbiere/aiger.git
