@@ -8,6 +8,7 @@ from pysat.formula import CNF
 from pysat.solvers import Glucose3
 import aigerox
 
+
 sys.setrecursionlimit(10 ** 9)
 tc = multiprocessing.Value('i', 0)
 fc = multiprocessing.Value('i', 0)
@@ -44,9 +45,13 @@ def extract_filenames(dirs, extension):
     ]
 
 
+def mkdirs(*dirs):
+    for d in dirs:
+        if not os.path.exists(d):
+            os.mkdir(d)
+
+
 def convert_blif(output_dir, blf):
-    # Конвертирует вроде бы правильно, но нет функциональности вытащить входы
-    # на самом деле тоже не очень-то правильно, adder получается unsat формулой
     cnf_filename = f'{blf.split("/")[-1].split(".")[0]}.cnf'
     if os.path.exists(f'{output_dir}/{cnf_filename}'):
         print(f'File {cnf_filename} already exists. To regenerate clear {output_dir}.')
@@ -66,30 +71,21 @@ def convert_aig(output_dir, aig):
     aag_filename = cnf_filename.replace('.cnf', '.aag')
     inputs_filename = cnf_filename.replace('.cnf', '.inputs')
 
-    if not os.path.exists(f'{output_dir}/aag'):
-        os.mkdir(f'{output_dir}/aag')
-    if not os.path.exists(f'{output_dir}/aig'):
-        os.mkdir(f'{output_dir}/aig')
-    if not os.path.exists(f'{output_dir}/cnf'):
-        os.mkdir(f'{output_dir}/cnf')
-    if not os.path.exists(f'{output_dir}/inputs'):
-        os.mkdir(f'{output_dir}/inputs')
-    if os.path.exists(f'{output_dir}/cnf/{cnf_filename}'):
-        print(f'File {cnf_filename} already exists. To regenerate clear {output_dir}.')
-    else:
-        print(f'\nConverting {aig}...')
-        shutil.copy(aig, f'{output_dir}/aig/')
-        os.system(f'aiger/aigtoaig {aig} {output_dir}/aag/{aag_filename}')
-        parsed_aig = aigerox.Aig.from_file(f'{output_dir}/aag/{aag_filename}')
+    mkdirs(f'{output_dir}/aag', f'{output_dir}/aig', f'{output_dir}/cnf', f'{output_dir}/inputs')
 
-        inputs = parsed_aig.inputs()
-        aboba = parsed_aig.to_cnf()
-        inputs = list(sorted(inputs))
-        f = CNF(from_clauses=aboba)
-        f.to_file(f'{output_dir}/cnf/{cnf_filename}')
-        with open(f'{output_dir}/inputs/{inputs_filename}', 'w') as inputs_file:
-            inputs_file.write(f'{len(inputs)}\n{" ".join(map(str, inputs))}\n')
-        check_sat(f)
+    print(f'\nConverting {aig}...')
+    shutil.copy(aig, f'{output_dir}/aig/')
+    os.system(f'aiger/aigtoaig {aig} {output_dir}/aag/{aag_filename}')
+    parsed_aig = aigerox.Aig.from_file(f'{output_dir}/aag/{aag_filename}')
+
+    inputs = parsed_aig.inputs()
+    clauses, mapping = parsed_aig.to_cnf()
+    inputs = list(sorted([mapping[x] for x in inputs]))
+    f = CNF(from_clauses=clauses)
+    f.to_file(f'{output_dir}/cnf/{cnf_filename}')
+    with open(f'{output_dir}/inputs/{inputs_filename}', 'w') as inputs_file:
+        inputs_file.write(f'{len(inputs)}\n{" ".join(map(str, inputs))}\n')
+    check_sat(f)
 
 
 if __name__ == '__main__':
@@ -108,9 +104,9 @@ if __name__ == '__main__':
         files = aig_files
     for file in files:
         convert_function(output_dir, file)
-    print(f'SAT formulas: {tc.value}/{len(files)}')
-    print(f'UNSAT formulas: {fc.value}/{len(files)}')
-    print(f'Stuck formulas: {len(files) - tc.value - fc.value}/{len(files)}')
+    print(f'SAT formulae: {tc.value}/{len(files)}')
+    print(f'UNSAT formulae: {fc.value}/{len(files)}')
+    print(f'Stuck formulae: {len(files) - tc.value - fc.value}/{len(files)}')
 
     if os.path.exists(f'{output_dir}/abc.history'):
         os.system(f'rm {output_dir}/abc.history')

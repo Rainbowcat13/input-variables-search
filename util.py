@@ -67,8 +67,16 @@ def fitness(solver: Glucose3 | Cadical195, candidate: list[int], estimation_vect
         else:
             metric += len(result)
 
-    ratio = (metric / estimation_vectors_count, conflicts_count / estimation_vectors_count)
+    ratio = (
+        # metric / (estimation_vectors_count - conflicts_count) if conflicts_count < estimation_vectors_count else 0,
+        metric / estimation_vectors_count,
+        conflicts_count / estimation_vectors_count
+    )
     return ratio
+
+
+def formula_size(f: CNF) -> int:
+    return sum([len(clause) for clause in f.clauses])
 
 
 if __name__ == '__main__':
