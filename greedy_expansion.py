@@ -9,9 +9,11 @@ ESTIMATION_VECTOR_COUNT = 120
 eps = 0.01
 
 
-def expand(f: CNF, start: int, size_upper_bound: int) -> list[int]:
+def expand(f: CNF, start: int, size_upper_bound: int, from_pickle=None) -> list[int]:
     solver = Glucose3(f.clauses)
     candidate = {start}
+    if from_pickle is not None:
+        candidate = set(from_pickle)
     non_used = set(range(1, f.nv)) - candidate
     sys.stderr.write(f'Start {start}\n')
     while len(candidate) < min(size_upper_bound, f.nv):

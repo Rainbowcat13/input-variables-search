@@ -79,8 +79,17 @@ def formula_size(f: CNF) -> int:
     return sum([len(clause) for clause in f.clauses])
 
 
+def extremum_indices(ratios: list[int]) -> list[int]:
+    result = []
+    for index in range(len(ratios)):
+        if ratios[index] >= ratios[index - 1] and ratios[index] > ratios[index + 1]:
+            result.append(index)
+    return result
+
+
 if __name__ == '__main__':
     formula = CNF(from_file='formula.cnf')
     g = Glucose3(formula.clauses)
     print(precount_set_order(formula, g, level=3))
     print(var_frequency(formula))
+    print(extremum_indices([1, 2, 3, 4, 5, 4, 6, 7, 8, 0]))
