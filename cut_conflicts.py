@@ -20,27 +20,17 @@ formula = CNF(from_file=formula_filename)
 # solver = c
 
 
-SIZE_UPPER_BOUND = 50
-SIZE_LOWER_BOUND = 30
+SIZE_UPPER_BOUND = 270
+SIZE_LOWER_BOUND = 150
 ESTIMATION_VECTOR_SIZE = 10
 TRY_COUNT = 100
 
 conflicts_ratio = [[] for _ in range(TRY_COUNT)]
 prop_ratio = [[] for _ in range(TRY_COUNT)]
 results = [(0, 0, []) for _ in range(TRY_COUNT)]
-randomshit = 0
-unsat_cnt = 0
-prop_cnt = 0
-core_none = 0
 
 g = Glucose3(bootstrap_with=formula.clauses)
 c = Cadical195(bootstrap_with=formula.clauses)
-
-# print(c.propagate([])[0])
-# print(g.propagate([])[0])
-
-print(c.solve())
-print(g.solve())
 
 for t in range(TRY_COUNT):
     print(f'Try count {t}')
@@ -54,21 +44,16 @@ for t in range(TRY_COUNT):
         prop_count = 0
         var_cause_conflict = defaultdict(int)
         for assumption in assumptions:
-            no_conflicts, result = Glucose3(formula.clauses).propagate(assumption)
-            unsat = Glucose3(formula.clauses).propagate()[0]
-            if unsat:
-                unsat_cnt += 1
-            prop_cnt += 1
+            solver = Glucose3(bootstrap_with=formula.clauses)
+            no_conflicts, result = solver.propagate(assumption)
 
             if not no_conflicts:
-                s = Glucose3(formula.clauses)
-                core = s.get_core()
-                if core is None:
-                    core = []
-                    core_none += 1
-
+                sat = solver.solve(assumption)
+                if sat:
+                    sys.stderr.write('Propagate has conflicts, solver does not!\n')
+                core = solver.get_core()
                 conflicts_count += 1
-                for var in set(assumption_key(core)) & input_cand:
+                for var in set(assumption_key(core or [])) & input_cand:
                     var_cause_conflict[var] += 1
             else:
                 prop_count += len(result)
@@ -84,8 +69,6 @@ for t in range(TRY_COUNT):
         prop_ratio[t].append(prop_count / ESTIMATION_VECTOR_SIZE)
 
         if len(input_cand) > SIZE_LOWER_BOUND:
-            if max_conflicts == -1:
-                randomshit += 1
             input_cand.remove(conflict_var)
         else:
             break
@@ -105,10 +88,8 @@ for result in results:
     if result[1] < min_conflict_ratio:
         min_conflict_result = result[2]
         min_conflict_ratio = result[1]
-print(f'Min conflict ratio: {min_conflict_ratio} with input:')
-print(*min_conflict_result)
-print(f'Max prop ratio: {max_prop_ratio}/{formula.nv} with input:')
-print(*max_prop_result)
-print(f'Random shit: {randomshit}')
-print(f'Unsat: {unsat_cnt}/{prop_cnt}')
-print(f'Core none: {core_none}/{prop_cnt}')
+# print(f'Min conflict ratio: {min_conflict_ratio} with input:')
+# print(*sorted(min_conflict_result))
+# print(f'Max prop ratio: {max_prop_ratio}/{formula.nv} with input:')
+print(len(max_prop_result))
+print(*sorted(max_prop_result))
