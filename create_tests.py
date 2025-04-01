@@ -1,12 +1,13 @@
 import os
 import sys
-from pathlib import Path
 import multiprocessing
 import shutil
 
 from pysat.formula import CNF
 from pysat.solvers import Glucose3
 import aigerox
+
+from util import extract_filenames, mkdirs
 
 
 sys.setrecursionlimit(10 ** 9)
@@ -32,23 +33,6 @@ def check_sat(f):
         print('Solving stuck, exiting')
         p.kill()
         p.join()
-
-
-def extract_filenames(dirs, extension):
-    return [
-        str(file.absolute())
-        for file in sum([
-            list(Path(d).glob('**/*'))
-            for d in dirs
-        ], [])
-        if file.name.endswith(extension)
-    ]
-
-
-def mkdirs(*dirs):
-    for d in dirs:
-        if not os.path.exists(d):
-            os.mkdir(d)
 
 
 def convert_blif(output_dir, blf):

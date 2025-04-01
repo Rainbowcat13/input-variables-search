@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import math
+import os
+from pathlib import Path
 
+import numpy as np
 from pysat.formula import CNF
 from pysat.solvers import Glucose3, Cadical195
-import numpy as np
 
-from itertools import combinations
 from collections import Counter
+from itertools import combinations
 
 
 def fullscan_values(assumption, set_size):
@@ -85,6 +87,27 @@ def extremum_indices(ratios: list[int]) -> list[int]:
         if ratios[index] >= ratios[index - 1] and ratios[index] > ratios[index + 1]:
             result.append(index)
     return result
+
+
+def extract_filenames(dirs, extension):
+    return [
+        str(file.absolute())
+        for file in sum([
+            list(Path(d).glob('**/*'))
+            for d in dirs
+        ], [])
+        if file.name.endswith(extension)
+    ]
+
+
+def basename_noext(filename):
+    return os.path.splitext(os.path.basename(filename))[0]
+
+
+def mkdirs(*dirs):
+    for d in dirs:
+        if not os.path.exists(d):
+            os.mkdir(d)
 
 
 if __name__ == '__main__':
