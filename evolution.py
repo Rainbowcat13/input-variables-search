@@ -1,6 +1,5 @@
 import random
 import argparse
-import sys
 
 from pysat.formula import CNF
 from pysat.solvers import Glucose3

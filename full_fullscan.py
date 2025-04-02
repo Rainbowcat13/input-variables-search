@@ -1,5 +1,6 @@
 from pysat.formula import CNF
 from pysat.solvers import Glucose3
+
 from util import fullscan_values
 
 

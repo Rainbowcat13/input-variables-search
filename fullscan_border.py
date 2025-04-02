@@ -1,8 +1,10 @@
 import sys
 from itertools import combinations
-from util import fullscan_values
+
 from pysat.formula import CNF
 from pysat.solvers import Glucose3
+
+from util import fullscan_values
 
 
 formula_filename = 'formula.cnf'

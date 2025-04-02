@@ -35,6 +35,7 @@ def check_sat(f):
         p.join()
 
 
+# do not use
 def convert_blif(output_dir, blf):
     cnf_filename = f'{blf.split("/")[-1].split(".")[0]}.cnf'
     if os.path.exists(f'{output_dir}/{cnf_filename}'):

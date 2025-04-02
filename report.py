@@ -63,4 +63,4 @@ full_report_filename = f'reports/rp-{max_report_num + 1}.report'
 with open(full_report_filename, 'w') as rp_file:
     rp_file.write('\n'.join(total_result))
 
-print(f'Checked {ans_count} answer from {cnf_count} formulas. Full report is available in {full_report_filename}')
+print(f'Checked {ans_count} answers from {cnf_count} formulas. Full report is available in {full_report_filename}')
