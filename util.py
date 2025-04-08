@@ -53,7 +53,12 @@ def random_assumptions(vector: list[int], num_assumptions=None) -> list[list[int
     return assumptions.tolist()
 
 
-def fitness(solver: Glucose3 | Cadical195, candidate: list[int], estimation_vectors_count: int) -> (float, float):
+def fitness(solver_or_formula: Glucose3 | Cadical195 | CNF, candidate: list[int], estimation_vectors_count: int) \
+        -> (float, float):
+    solver = solver_or_formula
+    if isinstance(solver_or_formula, CNF):
+        solver = Glucose3(bootstrap_with=solver_or_formula.clauses)
+
     if math.log2(estimation_vectors_count) > len(candidate):
         estimation_vectors_count = 2 ** len(candidate)
     vectors = random_assumptions(candidate, estimation_vectors_count)
@@ -81,9 +86,9 @@ def formula_size(f: CNF) -> int:
     return sum([len(clause) for clause in f.clauses])
 
 
-def extremum_indices(ratios: list[int]) -> list[int]:
+def extremum_indices(ratios: list[float]) -> list[int]:
     result = []
-    for index in range(len(ratios)):
+    for index in range(1, len(ratios) - 1):
         if ratios[index] >= ratios[index - 1] and ratios[index] > ratios[index + 1]:
             result.append(index)
     return result
@@ -108,6 +113,15 @@ def mkdirs(*dirs):
     for d in dirs:
         if not os.path.exists(d):
             os.mkdir(d)
+
+
+def total_ratio(f: CNF, prop_ratio: float, conflict_ratio: float) -> float:
+    return prop_ratio / f.nv - conflict_ratio
+
+
+def count_total_ratio(f: CNF, solver: Glucose3 | Cadical195, cand, estimation_vector_count=200):
+    prop_ratio, conflict_ratio = fitness(solver, cand, estimation_vector_count)
+    return total_ratio(f, prop_ratio, conflict_ratio)
 
 
 if __name__ == '__main__':
