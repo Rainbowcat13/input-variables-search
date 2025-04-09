@@ -1,5 +1,6 @@
 import random
 import sys
+import time
 from multiprocessing import Pool, freeze_support
 import argparse
 
@@ -8,7 +9,7 @@ from pysat.solvers import Glucose3
 
 from cut_conflicts import cut
 from greedy_expansion import expand
-from evolution import evolution, evolution_arg_parser
+from evolution import evolution, create_evolution_params
 from util import fitness, precount_set_order, count_total_ratio
 
 orchestra_arg_parser = argparse.ArgumentParser(
@@ -23,18 +24,6 @@ orchestra_arg_parser.add_argument('-m', '--metric-mode', type=str,
                                   default='prop')
 
 
-def create_evolution_params(set_size):
-    return evolution_arg_parser.parse_args(
-        [
-            'pupa',
-            '-s', str(set_size),
-            '-e', '120',
-            '-g', '20000',
-            '-r', '13',
-        ]
-    )
-
-
 upper_bounds = [2 ** x for x in range(2, 9)] + [300]
 RANDOM_SAMPLES_COUNT = len(upper_bounds)
 
@@ -44,6 +33,7 @@ if __name__ == '__main__':
     params = orchestra_arg_parser.parse_args()
     random.seed(params.random_seed)
 
+    start_time = time.time()
     formula = CNF(from_file=params.filename)
     g = Glucose3(formula.clauses)
     CONFLICT_BORDER = 0.99
@@ -99,6 +89,7 @@ if __name__ == '__main__':
 
     results = []
     for candidate in cut_candidates:
+        print(len(candidate))
         total_ratio = count_total_ratio(formula, g, candidate[0], 100)
 
         cur_input = candidate[0] + []
@@ -156,3 +147,5 @@ if __name__ == '__main__':
     elif params.metric_mode == 'conflicts':
         print(len(best_conflicts))
         print(*sorted(best_conflicts))
+
+    sys.stderr.write(f'Completed in {round(time.time() - start_time, 3)} seconds.\n')

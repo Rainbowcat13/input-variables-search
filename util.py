@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import os
+from enum import Enum
 from pathlib import Path
 
 import numpy as np
@@ -10,6 +11,12 @@ from pysat.solvers import Glucose3, Cadical195
 
 from collections import Counter
 from itertools import combinations
+
+
+class ScoreMethod(Enum):
+    CONFLICTS = 1
+    PROP = 2
+    TOTAL = 3
 
 
 def fullscan_values(assumption, set_size):
@@ -53,8 +60,8 @@ def random_assumptions(vector: list[int], num_assumptions=None) -> list[list[int
     return assumptions.tolist()
 
 
-def fitness(solver_or_formula: Glucose3 | Cadical195 | CNF, candidate: list[int], estimation_vectors_count: int) \
-        -> (float, float):
+def fitness(solver_or_formula: Glucose3 | Cadical195 | CNF, candidate: list[int], estimation_vectors_count: int,
+            zero_conflict_tolerance=False) -> (float, float):
     solver = solver_or_formula
     if isinstance(solver_or_formula, CNF):
         solver = Glucose3(bootstrap_with=solver_or_formula.clauses)
@@ -70,7 +77,8 @@ def fitness(solver_or_formula: Glucose3 | Cadical195 | CNF, candidate: list[int]
 
         if not no_conflicts:
             conflicts_count += 1
-            # return -1, -1
+            if zero_conflict_tolerance:
+                return -0.1, 1.01
         else:
             metric += len(result)
 
@@ -122,6 +130,18 @@ def total_ratio(f: CNF, prop_ratio: float, conflict_ratio: float) -> float:
 def count_total_ratio(f: CNF, solver: Glucose3 | Cadical195, cand, estimation_vector_count=200):
     prop_ratio, conflict_ratio = fitness(solver, cand, estimation_vector_count)
     return total_ratio(f, prop_ratio, conflict_ratio)
+
+
+def score(f: CNF, s: Glucose3 | Cadical195, cand: list[int],
+          estimation_vector_count: int, method: ScoreMethod):
+    if method == ScoreMethod.PROP:
+        return fitness(s, cand, estimation_vector_count)[0] / f.nv
+    elif method == ScoreMethod.CONFLICTS:
+        return -fitness(s, cand, estimation_vector_count)[1]
+    elif method == ScoreMethod.TOTAL:
+        return count_total_ratio(f, s, cand, estimation_vector_count)
+    else:
+        raise ValueError('Unknown score method')
 
 
 if __name__ == '__main__':

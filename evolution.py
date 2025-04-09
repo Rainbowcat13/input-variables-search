@@ -1,8 +1,10 @@
 import random
 import argparse
+import sys
 
 from pysat.formula import CNF
 from pysat.solvers import Glucose3
+from tqdm import tqdm
 
 from util import fitness
 
@@ -20,6 +22,18 @@ evolution_arg_parser.add_argument('-g', '--generations-count', type=int, help='g
 evolution_arg_parser.add_argument('-r', '--random-seed', type=int, help='seed for random', default=1337)
 evolution_arg_parser.add_argument('-m', '--mode', type=str, help='mode for', default='solve',
                                   choices=['solve', 'conflicts'])
+
+
+def create_evolution_params(set_size, generations=1000, estimation_vector_count=100):
+    return evolution_arg_parser.parse_args(
+        [
+            'pupa',
+            '-s', str(set_size),
+            '-e', str(estimation_vector_count),
+            '-g', str(generations),
+            '-r', '13',
+        ]
+    )
 
 
 def start_population(f: CNF):
@@ -54,7 +68,7 @@ def mutate(f: CNF, candidate: list[int]):
 
 
 # if formula is given, ignores parsing CNF from file
-# if population is give, uses it as a start
+# if population is given, uses it as a start
 def evolution(params, formula=None, population=None):
     if formula is None:
         formula = CNF(from_file=params.filename)
@@ -64,28 +78,27 @@ def evolution(params, formula=None, population=None):
     g = Glucose3(formula.clauses)
     best = population[0]
     fit_best = fitness(g, best, params.estimation_vectors_count)[0]
-    conflicts_ratio_sum = 0
-    for gen in range(params.generations_count):
-        # sys.stderr.write(f'Generation {gen + 1}/{params.generations_count}\n')
+    cfl_ratio_sum = 0
+    for _ in tqdm(range(params.generations_count), desc='Evolution generations', file=sys.stderr):
         offspring = [mutate(formula, candidate) for candidate in population]
 
         for i in range(params.population_size):
             off_fit, conflicts_ratio = fitness(g, offspring[i], params.estimation_vectors_count)
-            conflicts_ratio_sum += conflicts_ratio
+            cfl_ratio_sum += conflicts_ratio
             if off_fit >= fit_best:
                 best = offspring[i]
                 fit_best = off_fit
                 population[i] = offspring[i]
 
     mx = (-1, -1)
-    result = []
-    for candidate in population:
+    final_result = []
+    for candidate in population + [best]:
         score = fitness(g, candidate, params.estimation_vectors_count)
         if score[0] > mx[0]:
-            result = candidate + []
+            final_result = candidate + []
             mx = score
 
-    return result, conflicts_ratio_sum
+    return final_result, cfl_ratio_sum
 
 
 if __name__ == '__main__':
