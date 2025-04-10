@@ -3,12 +3,14 @@ import sys
 import time
 from multiprocessing import freeze_support, Pool
 
+import numpy as np
 from pysat.formula import CNF
 from pysat.solvers import Glucose3
 
 from tqdm import tqdm
 import psutil
 
+from cut_conflicts import cut
 from greedy_expansion import expand
 from util import score, ScoreMethod
 from evolution import create_evolution_params, evolution
@@ -51,13 +53,28 @@ def print_score(cands):
         print(*sorted(cand))
 
 
+def choose_best(f: CNF, g: Glucose3, candidates: list[list[int]],
+                estimation_vector_cnt: int, score_method: ScoreMethod) -> tuple[list[int], float]:
+    best_cand = None
+    best_pts = -1.1
+    for candidate in candidates:
+        pts = score(f, g, candidate, estimation_vector_cnt, score_method)
+        if best_cand is None or pts > best_pts:
+            best_cand = candidate
+            best_pts = pts
+
+    return best_cand, best_pts
+
+
 if __name__ == '__main__':
     freeze_support()
     random.seed(22)
+    np.random.seed(22)
 
     formula_filename = 'formula.cnf'
     break_on_decline = False
     zero_conflict_tolerance = False
+    conflict_border = 0.45
     estimation_vector_count = 1000
 
     if len(sys.argv) > 1:
@@ -104,21 +121,6 @@ if __name__ == '__main__':
     best = [(start_sets[i], tr) for tr, i in total_ratios[:EXPANSION_CANDIDATES_COUNT]]
     # best = [([1, 2, 3], 0.01)]
 
-    # Расширяем эти множества до тех пор, пока доля конфликтов не начнёт расти, либо до верхней границы
-    # with Pool(pool_size) as pool:
-    #     expanded_sets = list(tqdm(
-    #         pool.imap_unordered(
-    #             expand_unpacked,
-    #             [(
-    #                 (
-    #                     formula,
-    #                     st,
-    #                     INPUT_SIZE_UPPER_BOUND
-    #                 ),
-    #                 {'break_on_decline': True, 'sample_size': sample_size}
-    #             ) for st, _ in best]
-    #         ), total=pool_size, desc='Main expanding', file=sys.stderr))
-
     with Pool(pool_size) as pool:
         expanded_sets = [expand_unpacked((
             (
@@ -132,22 +134,35 @@ if __name__ == '__main__':
                 'pool': pool,
                 'pool_chunk_size': sample_size // pool_size,
                 'zero_conflict_tolerance': zero_conflict_tolerance,
-                'conflict_border': 0.9
+                'conflict_border': conflict_border
             })
         ) for st, _ in best]
 
-    # expanded_sets = [list(sorted(set(list(range(1, 128)) + random.sample(list(range(1, formula.nv + 1)), 128))))]
-
-    # print_score(expanded_sets)
-
+    final_candidates = []
     for i, st in enumerate(expanded_sets):
-        st = st[0]
-        params = create_evolution_params(len(st), generations=10000, estimation_vector_count=estimation_vector_count)
-        evoluted = evolution(params, formula, [st])
-        expanded_sets[i] = evoluted[0]
+        # Первый – результат полного расширения, второй – лучший результат
+        for j in range(2):
+            current_cand = st[j]
+            params = create_evolution_params(len(current_cand),
+                                             generations=10000,
+                                             estimation_vector_count=estimation_vector_count)
 
-    # print_score(expanded_sets)
-    print(len(expanded_sets[0]))
-    print(*sorted(expanded_sets[0]))
+            evoluted, ratio_sum = evolution(params, formula, [current_cand])
+            final_candidates.append(evoluted)
 
+    for i in range(len(final_candidates)):
+        conflict_ratio = -score(formula, solver, final_candidates[i], estimation_vector_count, ScoreMethod.CONFLICTS)
+        with tqdm(desc=f'Candidate {i} cut iterations', leave=False, file=sys.stderr) as pbar:
+            while conflict_ratio > 0:
+                final_candidates[i] = cut(formula, final_candidates[i], estimation_vector_count)
+                conflict_ratio = -score(formula, solver, final_candidates[i],
+                                        estimation_vector_count, ScoreMethod.CONFLICTS)
+                pbar.update(1)
+
+    best, pts_best = choose_best(formula, solver, final_candidates, estimation_vector_count, ScoreMethod.TOTAL)
+
+    print(len(best))
+    print(*best)
+
+    sys.stderr.write(f'Score: {round(pts_best, 5)}\n')
     sys.stderr.write(f'Time: {round(time.time() - tm, 5)}\n')

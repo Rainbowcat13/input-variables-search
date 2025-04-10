@@ -18,7 +18,7 @@ def cut(f: CNF, candidate: list[int], estimation_vector_count: int) -> list[int]
     var_cause_conflict = defaultdict(int)
     for assumption in assumptions:
         solver = Glucose3(bootstrap_with=f.clauses)
-        no_conflicts, result = solver.propagate(assumption)
+        no_conflicts, res = solver.propagate(assumption)
 
         if not no_conflicts:
             sat = solver.solve(assumption)
@@ -29,7 +29,7 @@ def cut(f: CNF, candidate: list[int], estimation_vector_count: int) -> list[int]
             for var in set(assumption_key(core or [])) & vars_set:
                 var_cause_conflict[var] += 1
         else:
-            prop_count += len(result)
+            prop_count += len(res)
 
     max_conflicts = -1
     conflict_var = None
