@@ -96,7 +96,7 @@ if __name__ == '__main__':
                   ), {'show_progress_bar': False}) for start_set in start_sets]
             ), total=sample_size, desc='First small expanding', file=sys.stderr))
 
-    total_ratios = [(score(formula, solver, st, ESTIMATION_VECTOR_COUNT, ScoreMethod.TOTAL), i)
+    total_ratios = [(score(formula, solver, st[0], ESTIMATION_VECTOR_COUNT, ScoreMethod.TOTAL), i)
                     for i, st in enumerate(start_sets)]
     total_ratios.sort(key=lambda ratio_num: -ratio_num[0])
     # Выбираем несколько лучших небольших множеств
@@ -123,7 +123,7 @@ if __name__ == '__main__':
         expanded_sets = [expand_unpacked((
             (
                 formula,
-                st,
+                st[0],
                 INPUT_SIZE_UPPER_BOUND
             ),
             {
@@ -141,6 +141,7 @@ if __name__ == '__main__':
     # print_score(expanded_sets)
 
     for i, st in enumerate(expanded_sets):
+        st = st[0]
         params = create_evolution_params(len(st), generations=10000, estimation_vector_count=estimation_vector_count)
         evoluted = evolution(params, formula, [st])
         expanded_sets[i] = evoluted[0]

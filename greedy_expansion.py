@@ -75,7 +75,7 @@ def expand_one_step(f: CNF, candidate: list[int], sample_size=None,
 
 def expand(f: CNF, pickle: list[int], size_upper_bound: int, sample_size=None, conflict_border=None,
            estimation_vector_count=ESTIMATION_VECTOR_COUNT, pool=None, break_on_decline=False,
-           pool_chunk_size=None, show_progress_bar=True, zero_conflict_tolerance=False) -> list[int]:
+           pool_chunk_size=None, show_progress_bar=True, zero_conflict_tolerance=False) -> tuple[list[int], list[int]]:
     candidate = set(pickle)
     non_used = set(range(1, f.nv + 1)) - candidate
     prev_min_ratio = 1
@@ -84,9 +84,22 @@ def expand(f: CNF, pickle: list[int], size_upper_bound: int, sample_size=None, c
     pbar = None
     if show_progress_bar:
         pbar = tqdm(total=target - len(candidate), desc='Expanding candidate', leave=True, file=sys.stderr)
+
+    max_prop_ratio = -0.1
+    max_prop_cand = None
     while len(candidate) < target:
-        new_vars = list(random.sample(non_used, sample_size) if sample_size is not None else non_used)
-        ratios = count_ratios(f, list(candidate), new_vars, estimation_vector_count,
+        cand_list = list(candidate)
+        prop_ratio, _ = fitness(f, cand_list, estimation_vector_count, zero_conflict_tolerance)
+        if prop_ratio > max_prop_ratio:
+            max_prop_ratio = prop_ratio
+            max_prop_cand = cand_list + []
+
+        new_vars = list(
+            random.sample(non_used, sample_size)
+            if sample_size is not None and sample_size < len(non_used)
+            else non_used
+        )
+        ratios = count_ratios(f, cand_list, new_vars, estimation_vector_count,
                               pool=pool, pool_chunk_size=pool_chunk_size,
                               zero_conflict_tolerance=zero_conflict_tolerance)
         min_conflict_var, min_conflict_ratio = count_min_conflict_var(ratios, new_vars)
@@ -96,10 +109,6 @@ def expand(f: CNF, pickle: list[int], size_upper_bound: int, sample_size=None, c
             break_on_decline and prev_min_ratio < min_conflict_ratio,
             conflict_border is not None and conflict_border < min_conflict_ratio
         ]):
-            print(ratios)
-            print(min_conflict_var)
-            print(break_on_decline, prev_min_ratio, min_conflict_ratio)
-            print(conflict_border, min_conflict_ratio)
             break
 
         prev_min_ratio = min_conflict_ratio
@@ -111,4 +120,4 @@ def expand(f: CNF, pickle: list[int], size_upper_bound: int, sample_size=None, c
     if pbar is not None:
         pbar.close()
 
-    return list(candidate)
+    return list(candidate), max_prop_cand

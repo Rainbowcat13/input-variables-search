@@ -45,7 +45,7 @@ if __name__ == '__main__':
     for start_var in [random.choice(list(range(1, formula.nv + 1)))]:
         cand_pickle = [start_var]
         for upper_bound in upper_bounds:
-            current_result = expand(formula, cand_pickle, upper_bound)
+            current_result, _ = expand(formula, cand_pickle, upper_bound)
             if len(current_result) != upper_bound:
                 if len(var_sets) > len(evolution_candidates):
                     evolution_candidates = var_sets + []
