@@ -62,7 +62,11 @@ def convert_aig(output_dir, aig):
     print(f'\nConverting {aig}...')
     shutil.copy(aig, f'{output_dir}/aig/')
     os.system(f'aiger/aigtoaig {aig} {output_dir}/aag/{aag_filename}')
-    parsed_aig = aigerox.Aig.from_file(f'{output_dir}/aag/{aag_filename}')
+    try:
+        parsed_aig = aigerox.Aig.from_file(f'{output_dir}/aag/{aag_filename}')
+    except RuntimeError as err:
+        print(f'Cannot parse aag {aag_filename}. Reason {err}')
+        return
 
     inputs = parsed_aig.inputs()
     clauses, mapping = parsed_aig.to_cnf()
@@ -79,8 +83,8 @@ if __name__ == '__main__':
     output_dir = 'tests'
 
     benchmarks_dirs = ['benchmarks/arithmetic',
-                       'benchmarks/random_control',]
-                       # 'iwls2024-ls-contest/submissions/USTC_and_Huawei/aig']
+                       'benchmarks/random_control',
+                       'iwls2024-ls-contest/submissions/USTC_and_Huawei/aig']
     aig_files = extract_filenames(benchmarks_dirs, '.aig')
     blif_files = extract_filenames(benchmarks_dirs, '.blif')
 
@@ -93,7 +97,7 @@ if __name__ == '__main__':
         convert_function(output_dir, file)
     print(f'SAT formulae: {tc.value}/{len(files)}')
     print(f'UNSAT formulae: {fc.value}/{len(files)}')
-    print(f'Stuck formulae: {len(files) - tc.value - fc.value}/{len(files)}')
+    print(f'Stuck or incorrect formulae: {len(files) - tc.value - fc.value}/{len(files)}')
 
     if os.path.exists(f'{output_dir}/abc.history'):
         os.system(f'rm {output_dir}/abc.history')

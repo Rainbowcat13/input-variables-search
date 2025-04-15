@@ -90,7 +90,7 @@ if __name__ == '__main__':
 
     # Параметры
     ESTIMATION_VECTOR_COUNT = 200
-    INPUT_SIZE_UPPER_BOUND = 300
+    INPUT_SIZE_UPPER_BOUND = 1500
     EXPANSION_CANDIDATES_COUNT = 1
 
     pool_size = psutil.cpu_count(logical=False)
