@@ -13,6 +13,7 @@ from util import extract_filenames, mkdirs
 sys.setrecursionlimit(10 ** 9)
 tc = multiprocessing.Value('i', 0)
 fc = multiprocessing.Value('i', 0)
+stat_file = open('stats/inputs.stat', 'w')
 
 
 def try_solve(f, cnt1, cnt2):
@@ -67,6 +68,7 @@ def convert_aig(output_dir, aig):
     clauses, mapping = parsed_aig.to_cnf()
     inputs = list(sorted([mapping[x] for x in inputs]))
     f = CNF(from_clauses=clauses)
+    stat_file.write(f'{f.nv}:{len(inputs)}\n')
     f.to_file(f'{output_dir}/cnf/{cnf_filename}')
     with open(f'{output_dir}/inputs/{inputs_filename}', 'w') as inputs_file:
         inputs_file.write(f'{len(inputs)}\n{" ".join(map(str, inputs))}\n')
