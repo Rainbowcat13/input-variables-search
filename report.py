@@ -28,9 +28,9 @@ def write_check_result(cnf_file, inputs_file, ans_file, report_file):
 
     lv_res = f'Levenshtein distance from real input: {Levenshtein.distance(program_inputs, correct_inputs)}'
     match_res = (f'Match with real input: '
-                 f'{round(len(set(program_inputs) & set(correct_inputs)) / len(correct_inputs), 7) * 100}%')
-    prop_res = f'Propagation: {round(prop_ratio / formula.nv, 7) * 100}%'
-    cfl_res = f'Conflicts: {round(conflicts_ratio, 7) * 100}%'
+                 f'{round(len(set(program_inputs) & set(correct_inputs)) / len(correct_inputs) * 100, 7)}%')
+    prop_res = f'Propagation: {round(prop_ratio / formula.nv * 100, 7)}%'
+    cfl_res = f'Conflicts: {round(conflicts_ratio * 100, 7)}%'
     total_result.extend([f'Results for {basename_noext(cnf_file)}, solution method {solution_name(ans_file)}:',
                          '\t' + lv_res, '\t' + match_res, '\t' + prop_res, '\t' + cfl_res, ''])
 
@@ -41,7 +41,7 @@ def write_check_result(cnf_file, inputs_file, ans_file, report_file):
 
 cnf_files = list(sorted(extract_filenames(['tests/cnf'], '.cnf')))
 input_files = list(sorted(extract_filenames(['tests/inputs'], '.inputs')))
-ans_files = list(sorted(extract_filenames(['answers/fast_orchestra/fasten'], '.ans')))
+ans_files = list(sorted(extract_filenames(['answers/fast_orchestra/extra_slow'], '.ans')))
 ans_count = len(ans_files)
 cnf_count = len(cnf_files)
 

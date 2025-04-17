@@ -23,6 +23,7 @@ from evolution import create_evolution_params, evolution
 # т. е. примерно 700 и 7000
 # Будем оценивать схему как маленькую, если в ней меньше 10000 переменных, как большую иначе
 # TODO запустить стат-скрипт и посчитать насколько оценка близка к реальности на примерах
+# Запустил, насколько близка хз, ну вроде +- да, разве что для больших схем скорее все-таки меньше, чем 0.001 доля
 def count_sample_size(f: CNF) -> int:
     if f.nv >= 10000:
         return 7000
@@ -76,6 +77,7 @@ if __name__ == '__main__':
     zero_conflict_tolerance = False
     conflict_border = 0.45
     estimation_vector_count = 1000
+    big_expansion_no_sample = False
 
     if len(sys.argv) > 1:
         formula_filename = sys.argv[1]
@@ -84,6 +86,8 @@ if __name__ == '__main__':
             break_on_decline = True
             zero_conflict_tolerance = True
             estimation_vector_count = 100
+        elif sys.argv[2] == '--slow':
+            big_expansion_no_sample = True
 
     formula = CNF(from_file=formula_filename)
     solver = Glucose3(bootstrap_with=formula.clauses)
@@ -130,9 +134,9 @@ if __name__ == '__main__':
             ),
             {
                 'break_on_decline': break_on_decline,
-                'sample_size': sample_size,
+                'sample_size': None if big_expansion_no_sample else sample_size,
                 'pool': pool,
-                'pool_chunk_size': sample_size // pool_size,
+                'pool_chunk_size': (formula.nv if big_expansion_no_sample else sample_size) // pool_size,
                 'zero_conflict_tolerance': zero_conflict_tolerance,
                 'conflict_border': conflict_border
             })
@@ -162,7 +166,7 @@ if __name__ == '__main__':
     best, pts_best = choose_best(formula, solver, final_candidates, estimation_vector_count, ScoreMethod.TOTAL)
 
     print(len(best))
-    print(*best)
+    print(*sorted(best))
 
     sys.stderr.write(f'Score: {round(pts_best, 5)}\n')
     sys.stderr.write(f'Time: {round(time.time() - tm, 5)}\n')

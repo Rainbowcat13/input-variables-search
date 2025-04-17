@@ -19,6 +19,13 @@ class ScoreMethod(Enum):
     TOTAL = 3
 
 
+class CNFSchema:
+    def __init__(self, cnf: CNF, inputs: list[int], outputs: list[int]):
+        self.cnf = cnf
+        self.inputs = inputs
+        self.outputs = outputs
+
+
 def fullscan_values(assumption, set_size):
     assumption = list(assumption)
     for n in range(2 ** set_size):
@@ -119,8 +126,7 @@ def basename_noext(filename):
 
 def mkdirs(*dirs):
     for d in dirs:
-        if not os.path.exists(d):
-            os.mkdir(d)
+        os.makedirs(d, exist_ok=True)
 
 
 def total_ratio(f: CNF, prop_ratio: float, conflict_ratio: float) -> float:
@@ -142,6 +148,51 @@ def score(f: CNF, s: Glucose3 | Cadical195, cand: list[int],
         return count_total_ratio(f, s, cand, estimation_vector_count)
     else:
         raise ValueError('Unknown score method')
+
+
+def xor_cnf(a: int, b: int, c: int) -> list[list[int]]:
+    return [
+        [a, b, c], [-a, -b, c], [a, -b, -c], [-a, b, -c]
+    ]
+
+
+def unite_variables(f: CNF, var_list: list[int]) -> list[int]:
+    return [
+        var + f.nv if var > 0 else var - f.nv
+        for var in var_list
+    ]
+
+
+def construct_miter(outputs1: list[int], outputs2: list[int], max_var_num: int) -> list[list[int]]:
+    result = []
+
+    united_outputs_start = max_var_num
+    for var1, var2 in zip(outputs1, outputs2):
+        result.extend(xor_cnf(var1, var2, max_var_num))
+        max_var_num += 1
+
+    result.append(list(range(united_outputs_start, max_var_num)))
+    return result
+
+
+def create_schemas_lec(s1: CNFSchema, s2: CNFSchema) -> CNF:
+    if len(s1.outputs) != len(s2.outputs):
+        raise ValueError('Schemas differ in outputs, no need to start LEC')
+    # Пока не работает, если у схем входы по-разному пронумерованы
+    if s1.inputs != s2.inputs:
+        raise ValueError('Schemas differ in inputs, no need to start LEC')
+
+    outputs2 = unite_variables(s1.cnf, s2.outputs)
+    miter = construct_miter(s1.outputs, outputs2, s1.cnf.nv + s2.cnf.nv + 1)
+
+    united = CNF(
+        from_clauses=s1.cnf.clauses + [
+            unite_variables(s1.cnf, clause)
+            for clause in s2.cnf.clauses
+        ] + miter
+    )
+
+    return united
 
 
 if __name__ == '__main__':

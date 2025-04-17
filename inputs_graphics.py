@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 
+
 formulae_sizes, inputs_sizes = [], []
 with open('stats/inputs.stat', 'r') as f:
     for line in f:

@@ -3,6 +3,7 @@ numpy
 levenshtein
 matplotlib
 tqdm
-aigerox>=0.6.0
+aigerox
 psutil
 python-sat
+scipy

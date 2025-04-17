@@ -56,8 +56,10 @@ def convert_aig(output_dir, aig):
     cnf_filename = f'{aig.split("/")[-1].split(".")[0]}.cnf'
     aag_filename = cnf_filename.replace('.cnf', '.aag')
     inputs_filename = cnf_filename.replace('.cnf', '.inputs')
+    outputs_filename = cnf_filename.replace('.cnf', '.outputs')
 
-    mkdirs(f'{output_dir}/aag', f'{output_dir}/aig', f'{output_dir}/cnf', f'{output_dir}/inputs')
+    mkdirs(f'{output_dir}/aag', f'{output_dir}/aig', f'{output_dir}/cnf',
+           f'{output_dir}/inputs', f'{output_dir}/outputs')
 
     print(f'\nConverting {aig}...')
     shutil.copy(aig, f'{output_dir}/aig/')
@@ -69,13 +71,20 @@ def convert_aig(output_dir, aig):
         return
 
     inputs = parsed_aig.inputs()
+    outputs = parsed_aig.outputs()
     clauses, mapping = parsed_aig.to_cnf()
     inputs = list(sorted([mapping[x] for x in inputs]))
+    outputs = list(sorted([mapping[abs(x)] for x in outputs if x != 0]))
     f = CNF(from_clauses=clauses)
     stat_file.write(f'{f.nv}:{len(inputs)}\n')
     f.to_file(f'{output_dir}/cnf/{cnf_filename}')
-    with open(f'{output_dir}/inputs/{inputs_filename}', 'w') as inputs_file:
-        inputs_file.write(f'{len(inputs)}\n{" ".join(map(str, inputs))}\n')
+    for content, path in zip(
+            [inputs, outputs],
+            [f'{output_dir}/inputs/{inputs_filename}',
+             f'{output_dir}/outputs/{outputs_filename}']
+    ):
+        with open(path, 'w') as content_file:
+            content_file.write(f'{len(content)}\n{" ".join(map(str, content))}\n')
     check_sat(f)
 
 
