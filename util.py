@@ -152,13 +152,23 @@ def score(f: CNF, s: Glucose3 | Cadical195, cand: list[int],
 
 def xor_cnf(a: int, b: int, c: int) -> list[list[int]]:
     return [
-        [a, b, c], [-a, -b, c], [a, -b, -c], [-a, b, -c]
+        [a, b, -c], [-a, -b, -c], [a, -b, c], [-a, b, c]
     ]
 
 
-def unite_variables(f: CNF, var_list: list[int]) -> list[int]:
+def transform_variable(f: CNF, var: int, ignore: bool, offset: int):
+    if ignore or var == 0:
+        return var
+    return var + f.nv - offset if var > 0 else var - f.nv + offset
+
+
+def unite_variables(f: CNF, var_list: list[int], ignore: list[int] = None, offset: int = 0) -> list[int]:
+    if ignore is None:
+        ignore = set()
+    else:
+        ignore = set(ignore)
     return [
-        var + f.nv if var > 0 else var - f.nv
+        transform_variable(f, var, abs(var) in ignore, offset)
         for var in var_list
     ]
 
@@ -182,12 +192,12 @@ def create_schemas_lec(s1: CNFSchema, s2: CNFSchema) -> CNF:
     if s1.inputs != s2.inputs:
         raise ValueError('Schemas differ in inputs, no need to start LEC')
 
-    outputs2 = unite_variables(s1.cnf, s2.outputs)
-    miter = construct_miter(s1.outputs, outputs2, s1.cnf.nv + s2.cnf.nv + 1)
+    outputs2 = unite_variables(s1.cnf, s2.outputs, ignore=s2.inputs, offset=len(s2.inputs))
+    miter = construct_miter(s1.outputs, outputs2, s1.cnf.nv + s2.cnf.nv + 1 - len(s1.inputs))
 
     united = CNF(
         from_clauses=s1.cnf.clauses + [
-            unite_variables(s1.cnf, clause)
+            unite_variables(s1.cnf, clause, ignore=s2.inputs, offset=len(s2.inputs))
             for clause in s2.cnf.clauses
         ] + miter
     )

@@ -9,7 +9,6 @@ import aigerox
 
 from util import extract_filenames, mkdirs
 
-
 sys.setrecursionlimit(10 ** 9)
 tc = multiprocessing.Value('i', 0)
 fc = multiprocessing.Value('i', 0)
@@ -52,6 +51,14 @@ def convert_blif(output_dir, blf):
         check_sat(f)
 
 
+def map_var(mapping: dict[int, int], var: int) -> int:
+    if var > 0:
+        return mapping[var]
+    elif var < 0:
+        return -mapping[-var]
+    return 0
+
+
 def convert_aig(output_dir, aig):
     cnf_filename = f'{aig.split("/")[-1].split(".")[0]}.cnf'
     aag_filename = cnf_filename.replace('.cnf', '.aag')
@@ -73,8 +80,8 @@ def convert_aig(output_dir, aig):
     inputs = parsed_aig.inputs()
     outputs = parsed_aig.outputs()
     clauses, mapping = parsed_aig.to_cnf()
-    inputs = list(sorted([mapping[x] for x in inputs]))
-    outputs = list(sorted([mapping[abs(x)] for x in outputs if x != 0]))
+    inputs = list(sorted([map_var(mapping, x) for x in inputs]))
+    outputs = list(sorted([map_var(mapping, x) for x in outputs]))
     f = CNF(from_clauses=clauses)
     stat_file.write(f'{f.nv}:{len(inputs)}\n')
     f.to_file(f'{output_dir}/cnf/{cnf_filename}')
