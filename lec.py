@@ -8,12 +8,11 @@ from tqdm import tqdm
 
 from util import random_assumptions, xor_cnf, CNFSchema, create_schemas_lec
 
-TASKS_COUNT = 100000
+TASKS_COUNT = 20
 
 
-def extract_inputs(lec_instance: CNF) -> list[int]:
-    # TODO: add extraction
-    return []
+def extract_inputs(lec_instance: CNF):
+    return list(range(1, 129))
 
 
 def remove_miter(lec_instance: CNF) -> (CNF, list[int]):
@@ -62,6 +61,16 @@ def estimate_lec(lec_instance: CNF, inputs: list[int]) -> list[float]:
 def inputs_outputs(filename):
     with open(filename, 'r') as f:
         return [int(x) for x in f.readlines()[-1].strip().split()]
+
+
+def estimation(lec_instance: CNF):
+    lec_without_miter, miter = remove_miter(lec_instance)
+    inputs = extract_inputs(lec_without_miter)
+
+    time_estimations = estimate_lec(lec_instance, inputs)
+    total_time_prediction = (sum(time_estimations) / TASKS_COUNT) * 2 ** (len(inputs) - 1)
+    sys.stderr.write(f'Based on inputs SAT solving will take approximately {total_time_prediction} s.\n')
+    return time_estimations
 
 
 if __name__ == '__main__':

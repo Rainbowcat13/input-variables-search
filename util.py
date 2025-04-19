@@ -130,7 +130,7 @@ def mkdirs(*dirs):
 
 
 def total_ratio(f: CNF, prop_ratio: float, conflict_ratio: float) -> float:
-    return prop_ratio / f.nv - conflict_ratio
+    return prop_ratio / f.nv * (1 - conflict_ratio)
 
 
 def count_total_ratio(f: CNF, solver: Glucose3 | Cadical195, cand, estimation_vector_count=200):

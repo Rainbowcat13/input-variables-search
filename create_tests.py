@@ -7,7 +7,7 @@ from pysat.formula import CNF
 from pysat.solvers import Glucose3
 import aigerox
 
-from util import extract_filenames, mkdirs
+from util import extract_filenames, mkdirs, CNFSchema, create_schemas_lec
 
 sys.setrecursionlimit(10 ** 9)
 tc = multiprocessing.Value('i', 0)
@@ -60,13 +60,11 @@ def map_var(mapping: dict[int, int], var: int) -> int:
 
 
 def convert_aig(output_dir, aig):
-    cnf_filename = f'{aig.split("/")[-1].split(".")[0]}.cnf'
-    aag_filename = cnf_filename.replace('.cnf', '.aag')
-    inputs_filename = cnf_filename.replace('.cnf', '.inputs')
-    outputs_filename = cnf_filename.replace('.cnf', '.outputs')
-
-    mkdirs(f'{output_dir}/aag', f'{output_dir}/aig', f'{output_dir}/cnf',
-           f'{output_dir}/inputs', f'{output_dir}/outputs')
+    schema_name = aig.split("/")[-1].split(".")[0]
+    cnf_filename = f'{schema_name}.cnf'
+    aag_filename = f'{schema_name}.aag'
+    inputs_filename = f'{schema_name}.inputs'
+    outputs_filename = f'{schema_name}.outputs'
 
     print(f'\nConverting {aig}...')
     shutil.copy(aig, f'{output_dir}/aig/')
@@ -92,6 +90,9 @@ def convert_aig(output_dir, aig):
     ):
         with open(path, 'w') as content_file:
             content_file.write(f'{len(content)}\n{" ".join(map(str, content))}\n')
+    schema = CNFSchema(f, inputs, outputs)
+    lec_schema = create_schemas_lec(schema, schema)
+    lec_schema.to_file(f'{output_dir}/lec/{schema_name}_{schema_name}.cnf')
     check_sat(f)
 
 
@@ -109,6 +110,8 @@ if __name__ == '__main__':
     if '--aig' in sys.argv:
         convert_function = convert_aig
         files = aig_files
+    mkdirs(f'{output_dir}/aag', f'{output_dir}/aig', f'{output_dir}/cnf',
+           f'{output_dir}/inputs', f'{output_dir}/outputs', f'{output_dir}/lec')
     for file in files:
         convert_function(output_dir, file)
     print(f'SAT formulae: {tc.value}/{len(files)}')
