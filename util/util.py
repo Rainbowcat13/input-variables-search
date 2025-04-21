@@ -229,20 +229,28 @@ def shuffle_cnf(f: CNF) -> (CNF, dict[int, int]):
     return CNF(from_clauses=new_clauses), mapping
 
 
+def timeit(callback_func=None):
+    def decorate(func):
+        @wraps(func)
+        def wrapper(*args, **wrapper_kwargs):
+            start = time.perf_counter()
+            result = func(*args, **wrapper_kwargs)
+            taken_time = time.perf_counter() - start
+
+            if callback_func is not None:
+                callback_func(taken_time)
+            else:
+                sys.stderr.write(f'Time: {round(taken_time, 3)} seconds\n')
+
+            return result
+
+        return wrapper
+    return decorate
+
+
 if __name__ == '__main__':
     formula = CNF(from_file='tests/cnf/example_formula.cnf')
     g = Glucose3(formula.clauses)
     print(precount_set_order(formula, g, level=3))
     print(var_frequency(formula))
     print(extremum_indices([1, 2, 3, 4, 5, 4, 6, 7, 8, 0]))
-
-
-def timeit(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        start = time.perf_counter()
-        result = func(*args, **kwargs)
-        taken_time = time.perf_counter() - start
-        sys.stderr.write(f'Time: {round(taken_time, 3)} seconds\n')
-        return result
-    return wrapper

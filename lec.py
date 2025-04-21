@@ -1,12 +1,11 @@
 import sys
-import time
 
 from pysat.formula import CNF
 from pysat.solvers import Glucose3, Cadical195
 from scipy import stats
 from tqdm import tqdm
 
-from util.util import random_assumptions, xor_cnf, CNFSchema, create_schemas_lec
+from util.util import random_assumptions, xor_cnf, CNFSchema, create_schemas_lec, timeit
 
 TASKS_COUNT = 20
 
@@ -44,10 +43,7 @@ def estimate_lec(lec_instance: CNF, inputs: list[int]) -> list[float]:
     times = []
 
     for task in tqdm(tasks, desc='Checking assumptions', file=sys.stderr):
-        start = time.time()
-        result = solver.solve(task)
-        end = time.time()
-        times.append(end - start)
+        result = timeit(callback_func=lambda tm: times.append(tm))(lambda: solver.solve(task))()
         if result:
             sys.stderr.write('SAT found. Exiting.\n')
             sys.stderr.write(f'Model: {solver.get_model()}')

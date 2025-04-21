@@ -9,6 +9,9 @@ from extraction.fullscan import fullscan_border
 from util.util import timeit
 
 
+just_timeit = timeit()
+
+
 class FormulaSize(Enum):
     TINY = 10      # 1-10 variables
     SMALL = 100    # 11-100 variables
@@ -71,7 +74,7 @@ class InputsExtractor:
     def _orchestra_small_size(self):
         pass
 
-    @timeit
+    @just_timeit
     def extract(self, mode: ExtractionMode | None = None) -> list[int]:
         if mode is None:
             mode = self.mode
