@@ -6,14 +6,14 @@ from pysat.formula import CNF
 from pysat.solvers import Glucose3
 from tqdm import tqdm
 
-from util import fitness
+from util.util import fitness
 
 
 evolution_arg_parser = argparse.ArgumentParser(
     prog='Evolution algorithm',
     description='Uses evolutionary algorithm to determine input variables of a logical schema in CNF'
 )
-evolution_arg_parser.add_argument('filename', type=str, help='.cnf filename to get function from', default='formula.cnf')
+evolution_arg_parser.add_argument('filename', type=str, help='.cnf filename to get function from', default='example_formula.cnf')
 evolution_arg_parser.add_argument('-s', '--start-set-size', type=int, help='possible input start size', default=20)
 evolution_arg_parser.add_argument('-p', '--population-size', type=int, help='population size', default=1)
 evolution_arg_parser.add_argument('-e', '--estimation-vectors-count', type=int,

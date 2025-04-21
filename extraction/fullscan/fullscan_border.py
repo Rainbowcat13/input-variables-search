@@ -4,10 +4,10 @@ from itertools import combinations
 from pysat.formula import CNF
 from pysat.solvers import Glucose3
 
-from util import fullscan_values
+from util.util import fullscan_values
 
 
-formula_filename = 'formula.cnf'
+formula_filename = '../../tests/cnf/example_formula.cnf'
 if len(sys.argv) > 1:
     formula_filename = sys.argv[1]
 

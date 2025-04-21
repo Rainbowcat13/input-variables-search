@@ -5,10 +5,10 @@ import numpy as np
 from pysat.formula import CNF
 
 import lec
-from util import mkdirs
+from util.util import mkdirs
 
 if __name__ == '__main__':
-    path_to_lec = 'tests/lec'
+    path_to_lec = '../tests/lec'
     wanted = [
         'div_div.cnf', 'multiplier_multiplier.cnf'
     ]
@@ -16,7 +16,7 @@ if __name__ == '__main__':
     estimations = []
     mkdirs('stats/lec')
     for lec_instance_file in wanted:
-        stat_file = os.path.join('stats/lec', lec_instance_file.replace('.cnf', '.stat'))
+        stat_file = os.path.join('../stats/lec', lec_instance_file.replace('.cnf', '.stat'))
         lec_instance = CNF(from_file=os.path.join(path_to_lec, lec_instance_file))
         estimation = lec.estimation(lec_instance)
         estimations.append(np.var(estimation, ddof=0))

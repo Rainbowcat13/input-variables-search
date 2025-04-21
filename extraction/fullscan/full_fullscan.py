@@ -1,10 +1,10 @@
 from pysat.formula import CNF
 from pysat.solvers import Glucose3
 
-from util import fullscan_values
+from util.util import fullscan_values
 
 
-formula = CNF(from_file='formula.cnf')
+formula = CNF(from_file='../../tests/cnf/example_formula.cnf')
 number_vars = formula.nv
 g = Glucose3(formula.clauses)
 minimal_set = [i + 1 for i in range(number_vars)]

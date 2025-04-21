@@ -4,7 +4,7 @@ import Levenshtein
 from pysat.formula import CNF
 from pysat.solvers import Glucose3
 
-from util import fitness, extract_filenames, basename_noext, mkdirs
+from util.util import fitness, extract_filenames, basename_noext, mkdirs
 
 total_result = []
 

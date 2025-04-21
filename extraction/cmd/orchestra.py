@@ -7,16 +7,16 @@ import argparse
 from pysat.formula import CNF
 from pysat.solvers import Glucose3
 
-from cut_conflicts import cut
-from greedy_expansion import expand
-from evolution import evolution, create_evolution_params
-from util import fitness, precount_set_order, count_total_ratio
+from extraction.heuristics.cut_conflicts import cut
+from extraction.heuristics.greedy_expansion import expand
+from extraction.heuristics.evolution import evolution, create_evolution_params
+from util.util import fitness, precount_set_order, count_total_ratio
 
 orchestra_arg_parser = argparse.ArgumentParser(
     prog='Orchestra of evolution and greedy algorithms',
     description='Uses orchestra of 2 algorithms to determine input variables of a logical schema in CNF'
 )
-orchestra_arg_parser.add_argument('filename', type=str, help='.cnf filename to get function from', default='formula.cnf')
+orchestra_arg_parser.add_argument('filename', type=str, help='.cnf filename to get function from', default='example_formula.cnf')
 orchestra_arg_parser.add_argument('-d', '--debug-info', type=bool, help='show debug info', default=False)
 orchestra_arg_parser.add_argument('-r', '--random-seed', type=int, help='seed for random', default=1337)
 orchestra_arg_parser.add_argument('-m', '--metric-mode', type=str,

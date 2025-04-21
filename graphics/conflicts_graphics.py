@@ -23,8 +23,8 @@ plt.xlabel('Количество переменных в стартовом мн
 plt.ylabel('Доля конфликтующих подстановок', fontsize=40)
 plt.title('Скорость роста доли конфликтов\nот размера множества для некоторых схем', fontsize=40)
 
-for file in os.listdir('stats/evolution'):
-    with open(os.path.join('stats/evolution', file), 'r') as stat_file:
+for file in os.listdir('../stats/evolution'):
+    with open(os.path.join('../stats/evolution', file), 'r') as stat_file:
         schema_name = file.replace('.stat', '')
         if schema_name in wanted_schemas:
             ratios = [float(line.strip().split()[1]) for line in stat_file.readlines()]

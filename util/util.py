@@ -227,7 +227,7 @@ def shuffle_cnf(f: CNF) -> (CNF, dict[int, int]):
 
 
 if __name__ == '__main__':
-    formula = CNF(from_file='formula.cnf')
+    formula = CNF(from_file='../tests/cnf/example_formula.cnf')
     g = Glucose3(formula.clauses)
     print(precount_set_order(formula, g, level=3))
     print(var_frequency(formula))

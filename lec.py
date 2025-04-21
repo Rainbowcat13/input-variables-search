@@ -6,7 +6,7 @@ from pysat.solvers import Glucose3, Cadical195
 from scipy import stats
 from tqdm import tqdm
 
-from util import random_assumptions, xor_cnf, CNFSchema, create_schemas_lec
+from util.util import random_assumptions, xor_cnf, CNFSchema, create_schemas_lec
 
 TASKS_COUNT = 20
 

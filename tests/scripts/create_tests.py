@@ -7,7 +7,7 @@ from pysat.formula import CNF
 from pysat.solvers import Glucose3
 import aigerox
 
-from util import extract_filenames, mkdirs, CNFSchema, create_schemas_lec, map_var, shuffle_cnf
+from util.util import extract_filenames, mkdirs, CNFSchema, create_schemas_lec, map_var, shuffle_cnf
 
 sys.setrecursionlimit(10 ** 9)
 tc = multiprocessing.Value('i', 0)
@@ -96,7 +96,7 @@ def convert_aig(output_dir, aig):
 
 
 if __name__ == '__main__':
-    output_dir = 'tests'
+    output_dir = '..'
 
     benchmarks_dirs = ['benchmarks/arithmetic',
                        'benchmarks/random_control',

@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 
 
 formulae_sizes, inputs_sizes = [], []
-with open('stats/inputs.stat', 'r') as f:
+with open('../stats/inputs.stat', 'r') as f:
     for line in f:
         f_sz, inp_sz = [int(x) for x in line.strip().split(':')]
         formulae_sizes.append(f_sz)

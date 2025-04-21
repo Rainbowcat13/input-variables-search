@@ -5,7 +5,7 @@ from collections import defaultdict
 from pysat.formula import CNF
 from pysat.solvers import Glucose3
 
-from util import random_assumptions, fitness, assumption_key
+from util.util import random_assumptions, fitness, assumption_key
 
 
 def cut(f: CNF, candidate: list[int], estimation_vector_count: int) -> list[int]:
@@ -45,7 +45,7 @@ def cut(f: CNF, candidate: list[int], estimation_vector_count: int) -> list[int]
 
 
 if __name__ == '__main__':
-    formula_filename = 'formula.cnf'
+    formula_filename = '../../tests/cnf/example_formula.cnf'
     if len(sys.argv) > 1:
         formula_filename = sys.argv[1]
 

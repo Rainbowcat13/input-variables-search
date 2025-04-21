@@ -1,9 +1,9 @@
 from pysat.formula import CNF
 from pysat.solvers import Glucose3
 
-from util import assumption_key, precount_set_order, var_frequency
+from util.util import assumption_key, precount_set_order, var_frequency
 
-formula = CNF(from_file='formula.cnf')
+formula = CNF(from_file='../../tests/cnf/example_formula.cnf')
 number_vars = formula.nv
 controversions_or_scanned = set()
 non_output = set()

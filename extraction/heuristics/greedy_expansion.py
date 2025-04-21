@@ -9,7 +9,7 @@ from tqdm import tqdm
 from pysat.formula import CNF
 from pysat.solvers import Glucose3
 
-from util import fitness
+from util.util import fitness
 
 ESTIMATION_VECTOR_COUNT = 100
 POOL_SIZE = 8
