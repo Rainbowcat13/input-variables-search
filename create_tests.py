@@ -7,12 +7,16 @@ from pysat.formula import CNF
 from pysat.solvers import Glucose3
 import aigerox
 
-from util import extract_filenames, mkdirs, CNFSchema, create_schemas_lec
+from util import extract_filenames, mkdirs, CNFSchema, create_schemas_lec, map_var, shuffle_cnf
 
 sys.setrecursionlimit(10 ** 9)
 tc = multiprocessing.Value('i', 0)
 fc = multiprocessing.Value('i', 0)
 stat_file = open('stats/inputs.stat', 'w')
+
+
+def map_vars(mapping, vrs):
+    return [map_var(mapping, var) for var in vrs]
 
 
 def try_solve(f, cnt1, cnt2):
@@ -51,14 +55,6 @@ def convert_blif(output_dir, blf):
         check_sat(f)
 
 
-def map_var(mapping: dict[int, int], var: int) -> int:
-    if var > 0:
-        return mapping[var]
-    elif var < 0:
-        return -mapping[-var]
-    return 0
-
-
 def convert_aig(output_dir, aig):
     schema_name = aig.split("/")[-1].split(".")[0]
     cnf_filename = f'{schema_name}.cnf'
@@ -75,14 +71,17 @@ def convert_aig(output_dir, aig):
         print(f'Cannot parse aag {aag_filename}. Reason {err}')
         return
 
-    inputs = parsed_aig.inputs()
-    outputs = parsed_aig.outputs()
     clauses, mapping = parsed_aig.to_cnf()
-    inputs = list(sorted([map_var(mapping, x) for x in inputs]))
-    outputs = list(sorted([map_var(mapping, x) for x in outputs]))
+    inputs = map_vars(mapping, parsed_aig.inputs())
+    outputs = map_vars(mapping, parsed_aig.outputs())
+
     f = CNF(from_clauses=clauses)
-    stat_file.write(f'{f.nv}:{len(inputs)}\n')
-    f.to_file(f'{output_dir}/cnf/{cnf_filename}')
+    shuffled, shuffled_mapping = shuffle_cnf(f)
+    inputs = list(sorted(map_vars(shuffled_mapping, inputs)))
+    outputs = list(sorted(map_vars(shuffled_mapping, outputs)))
+
+    stat_file.write(f'{shuffled.nv}:{len(inputs)}\n')
+    shuffled.to_file(f'{output_dir}/cnf/{cnf_filename}')
     for content, path in zip(
             [inputs, outputs],
             [f'{output_dir}/inputs/{inputs_filename}',
@@ -90,10 +89,10 @@ def convert_aig(output_dir, aig):
     ):
         with open(path, 'w') as content_file:
             content_file.write(f'{len(content)}\n{" ".join(map(str, content))}\n')
-    schema = CNFSchema(f, inputs, outputs)
+    schema = CNFSchema(shuffled, inputs, outputs)
     lec_schema = create_schemas_lec(schema, schema)
     lec_schema.to_file(f'{output_dir}/lec/{schema_name}_{schema_name}.cnf')
-    check_sat(f)
+    check_sat(shuffled)
 
 
 if __name__ == '__main__':

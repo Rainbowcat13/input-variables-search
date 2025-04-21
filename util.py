@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import os
+import random
 from enum import Enum
 from pathlib import Path
 
@@ -203,6 +204,26 @@ def create_schemas_lec(s1: CNFSchema, s2: CNFSchema) -> CNF:
     )
 
     return united
+
+
+def map_var(mapping: dict[int, int], var: int) -> int:
+    if var > 0:
+        return mapping[var]
+    elif var < 0:
+        return -mapping[-var]
+    return 0
+
+
+def shuffle_cnf(f: CNF) -> (CNF, dict[int, int]):
+    new_var_numbers = list(range(1, f.nv + 1))
+    random.shuffle(new_var_numbers)
+    mapping = {
+        var: new_var
+        for var, new_var in zip(range(1, f.nv + 1), new_var_numbers)
+    }
+    new_clauses = [[map_var(mapping, var) for var in clause] for clause in f.clauses]
+
+    return CNF(from_clauses=new_clauses), mapping
 
 
 if __name__ == '__main__':
