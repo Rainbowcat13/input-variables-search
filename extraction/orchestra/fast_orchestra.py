@@ -10,10 +10,10 @@ from pysat.solvers import Glucose3
 from tqdm import tqdm
 import psutil
 
-from extraction.heuristics.cut_conflicts import cut
-from extraction.heuristics.greedy_expansion import expand
+from extraction.heuristic.cut_conflicts import cut
+from extraction.heuristic.greedy_expansion import expand
 from util.util import score, ScoreMethod
-from extraction.heuristics.evolution import create_evolution_params, evolution
+from extraction.heuristic.evolution import create_evolution_params, evolution
 
 
 # Попытаемся оценить, сколько элементов надо выбрать, чтобы попасть хотя бы в один вход
@@ -72,7 +72,7 @@ if __name__ == '__main__':
     random.seed(22)
     np.random.seed(22)
 
-    formula_filename = '../../tests/cnf/example_formula.cnf'
+    formula_filename = 'tests/cnf/example_formula.cnf'
     break_on_decline = False
     zero_conflict_tolerance = False
     conflict_border = 0.45

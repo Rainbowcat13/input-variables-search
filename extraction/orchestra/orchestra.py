@@ -7,9 +7,9 @@ import argparse
 from pysat.formula import CNF
 from pysat.solvers import Glucose3
 
-from extraction.heuristics.cut_conflicts import cut
-from extraction.heuristics.greedy_expansion import expand
-from extraction.heuristics.evolution import evolution, create_evolution_params
+from extraction.heuristic.cut_conflicts import cut
+from extraction.heuristic.greedy_expansion import expand
+from extraction.heuristic.evolution import evolution, create_evolution_params
 from util.util import fitness, precount_set_order, count_total_ratio
 
 orchestra_arg_parser = argparse.ArgumentParser(

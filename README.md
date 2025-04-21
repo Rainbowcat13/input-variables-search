@@ -65,6 +65,8 @@ pip install -r requirements.txt
 
 ### Флоу запуска
 
+**Все скрипты необходимо запускать из корня проекта.**
+
 Для начала необходимо найти где-то примеры логических схем. Используются ресурсы с соревнований по формальной верификации схем,
 они добавлены в репозиторий сабмодулями, на данный момент это [benchmarks](https://github.com/lsils/benchmarks.git) и
 [iwls2024-ls-contest](https://github.com/alanminko/iwls2024-ls-contest.git).
@@ -84,9 +86,9 @@ pip install -r requirements.txt
 запустить конкретные решения на конкретных тестах, нужно отредактировать содержимое переменных `solutions` и `skip_tests`.
 
 Все решения можно запустить из CLI, передав в качестве первого аргумента имя `.cnf` файла, где лежит интересующая формула.
-У [evolution](extraction/heuristics/evolution.py) и [orchestra](extraction/cmd/orchestra.py) есть хелперы для аргументов командной строки, можно посмотреть, что они принимают. 
-В [fast_orchestra](extraction/cmd/fast_orchestra.py) есть единственный второй аргумент: `--fasten`, который (предположительно) ухудшает ответ, но ускоряет решение.
-Пример запуска [evolution](extraction/heuristics/evolution.py):
+У [evolution](extraction/heuristic/evolution.py) и [orchestra](extraction/orchestra/orchestra.py) есть хелперы для аргументов командной строки, можно посмотреть, что они принимают. 
+В [fast_orchestra](extraction/orchestra/fast_orchestra.py) есть единственный второй аргумент: `--fasten`, который (предположительно) ухудшает ответ, но ускоряет решение.
+Пример запуска [evolution](extraction/heuristic/evolution.py):
 ```bash
 python3 evolution.py tests/cnf/adder.cnf -s 256 -g 1000 -m conflicts
 ```
@@ -114,14 +116,14 @@ python3 evolution.py tests/cnf/adder.cnf -s 256 -g 1000 -m conflicts
 
 ### Приближённые решения
 
-- [evolution](extraction/heuristics/evolution.py): эволюционный алгоритм 1+1, особь — множество переменных, мутация — равновероятная замена каждого
+- [evolution](extraction/heuristic/evolution.py): эволюционный алгоритм 1+1, особь — множество переменных, мутация — равновероятная замена каждого
   элемента множества на ещё не используемый, функция приспособленности — конфликты и количество выведенных на некоторых подстановках.
-- [cut_conflicts](extraction/heuristics/cut_conflicts.py): использует функционал SAT-решателя по нахождению конфликтующих переменных.
+- [cut_conflicts](extraction/heuristic/cut_conflicts.py): использует функционал SAT-решателя по нахождению конфликтующих переменных.
   Строим большое множество переменных, делаем на нём несколько подстановок, исключаем самую часто конфликтующую переменную,
   повторяем до тех пор, пока не достигнем нужного размера множества.
-- [greedy_expansion](extraction/heuristics/greedy_expansion.py): алгоритм жадного расширения, берём какое-то стартовое множество, пытаемся расширить
+- [greedy_expansion](extraction/heuristic/greedy_expansion.py): алгоритм жадного расширения, берём какое-то стартовое множество, пытаемся расширить
   его в сторону тех переменных, которые дают меньше всего конфликтов.
-- [orchestra](extraction/cmd/orchestra.py): комбинация [greedy_expansion](extraction/heuristics/greedy_expansion.py) и [evolution](extraction/heuristics/evolution.py), сначала
+- [orchestra](extraction/orchestra/orchestra.py): комбинация [greedy_expansion](extraction/heuristic/greedy_expansion.py) и [evolution](extraction/heuristic/evolution.py), сначала
   расширяемся в сторону минимальных конфликтов, затем мутируем получившиеся множества.
 
 ### Полные решения
@@ -137,7 +139,7 @@ python3 evolution.py tests/cnf/adder.cnf -s 256 -g 1000 -m conflicts
 
 ### ${\color{red}Ускорить \space решение}$
 
-- Сейчас [решение](extraction/cmd/orchestra.py), получающее нормальный ответ, для схемы `div` гоняется примерно неделю. 
+- Сейчас [решение](extraction/orchestra/orchestra.py), получающее нормальный ответ, для схемы `div` гоняется примерно неделю. 
 Надо каким-то образом его ускорить, при этом не сильно ухудшив ответ
 - Добавить простую балансировку между временем работы и точностью ответа, желательно вообще одним параметром
 

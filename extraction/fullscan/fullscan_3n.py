@@ -9,7 +9,7 @@ from util.util import assumption_key
 sys.setrecursionlimit(10 ** 9)
 
 
-formula = CNF(from_file='../../tests/cnf/example_formula.cnf')
+formula = CNF(from_file='tests/cnf/example_formula.cnf')
 number_vars = formula.nv
 g = Glucose3(formula.clauses)
 found = False

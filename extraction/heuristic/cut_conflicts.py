@@ -45,7 +45,7 @@ def cut(f: CNF, candidate: list[int], estimation_vector_count: int) -> list[int]
 
 
 if __name__ == '__main__':
-    formula_filename = '../../tests/cnf/example_formula.cnf'
+    formula_filename = 'tests/cnf/example_formula.cnf'
     if len(sys.argv) > 1:
         formula_filename = sys.argv[1]
 

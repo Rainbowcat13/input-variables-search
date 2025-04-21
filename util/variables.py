@@ -60,7 +60,7 @@ def simplify(formula: CNF) -> CNF:
 
 
 if __name__ == '__main__':
-    f = CNF(from_file='../tests/cnf/example_formula.cnf')
+    f = CNF(from_file='tests/cnf/example_formula.cnf')
     new_f = simplify(f)
     print(new_f.clauses)
     print(f.clauses == new_f.clauses)
