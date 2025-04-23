@@ -16,3 +16,6 @@
 [submodule "aiger"]
 	path = aiger
 	url = https://github.com/arminbiere/aiger.git
+[submodule "hdl-benchmarks"]
+	path = hdl-benchmarks
+	url = https://github.com/ispras/hdl-benchmarks.git

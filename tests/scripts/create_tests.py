@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import sys
 import multiprocessing
@@ -55,7 +57,7 @@ def convert_blif(output_dir, blf):
         check_sat(f)
 
 
-def convert_aig(output_dir, aig):
+def convert_aig(output_dir, aig, create_lec: bool = False, fix_inputs: bool = False) -> CNFSchema | None:
     schema_name = aig.split("/")[-1].split(".")[0]
     cnf_filename = f'{schema_name}.cnf'
     aag_filename = f'{schema_name}.aag'
@@ -63,7 +65,8 @@ def convert_aig(output_dir, aig):
     outputs_filename = f'{schema_name}.outputs'
 
     print(f'\nConverting {aig}...')
-    shutil.copy(aig, f'{output_dir}/aig/')
+    if not aig.startswith(f'{output_dir}/aig/'):
+        shutil.copy(aig, f'{output_dir}/aig/')
     os.system(f'aiger/aigtoaig {aig} {output_dir}/aag/{aag_filename}')
     try:
         parsed_aig = aigerox.Aig.from_file(f'{output_dir}/aag/{aag_filename}')
@@ -76,7 +79,15 @@ def convert_aig(output_dir, aig):
     outputs = map_vars(mapping, parsed_aig.outputs())
 
     f = CNF(from_clauses=clauses)
-    shuffled, shuffled_mapping = shuffle_cnf(f)
+    fixed_mapping = dict()
+    if fix_inputs:
+        fixed_mapping = {
+            var: idx + 1
+            for idx, var
+            in enumerate(inputs)
+        }
+
+    shuffled, shuffled_mapping = shuffle_cnf(f, fixed_mapping)
     inputs = list(sorted(map_vars(shuffled_mapping, inputs)))
     outputs = list(sorted(map_vars(shuffled_mapping, outputs)))
 
@@ -89,14 +100,42 @@ def convert_aig(output_dir, aig):
     ):
         with open(path, 'w') as content_file:
             content_file.write(f'{len(content)}\n{" ".join(map(str, content))}\n')
+
     schema = CNFSchema(shuffled, inputs, outputs)
-    lec_schema = create_schemas_lec(schema, schema)
-    lec_schema.to_file(f'{output_dir}/lec/{schema_name}_{schema_name}.cnf')
-    check_sat(shuffled)
+    if create_lec:
+        lec_schema = create_schemas_lec(schema, schema)
+        lec_schema.to_file(f'{output_dir}/lec/{schema_name}_{schema_name}.cnf')
+
+    return schema
+
+
+def convert_verilog(output_dir, verilog):
+    schema_name = verilog.split("/")[-1].split(".")[0]
+    aig_path = f'{output_dir}/aig/{schema_name}.aig'
+    with open('verilog_to_aig_template.ys', 'r') as template:
+        yosys_script = template.read().replace('${V_INPUT_FILE}',
+                                               verilog
+                                               ).replace('${AIG_OUTPUT_FILE}',
+                                                         aig_path)
+    os.system(f'yosys -p "{yosys_script}"')
+    return convert_aig(output_dir, aig_path, fix_inputs=True)
+
+
+def create_lec_from_verilog(output_dir, v_dir):
+    lec_instance_name = v_dir.split('/')[-1]
+    schemas = []
+    for v_file in os.listdir(v_dir):
+        schemas.append(convert_verilog(output_dir, os.path.join(v_dir, v_file)))
+    if len(schemas) != 2:
+        print('Cannot create LEC instance on one or more than 2 schemas')
+        return
+
+    lec_schema = create_schemas_lec(*schemas)
+    lec_schema.to_file(f'{output_dir}/lec/{lec_instance_name}.cnf')
 
 
 if __name__ == '__main__':
-    output_dir = '..'
+    tests_dir = 'tests'
 
     benchmarks_dirs = ['benchmarks/arithmetic',
                        'benchmarks/random_control',
@@ -109,13 +148,17 @@ if __name__ == '__main__':
     if '--aig' in sys.argv:
         convert_function = convert_aig
         files = aig_files
-    mkdirs(f'{output_dir}/aag', f'{output_dir}/aig', f'{output_dir}/cnf',
-           f'{output_dir}/inputs', f'{output_dir}/outputs', f'{output_dir}/lec')
+    mkdirs(f'{tests_dir}/aag', f'{tests_dir}/aig', f'{tests_dir}/cnf',
+           f'{tests_dir}/inputs', f'{tests_dir}/outputs', f'{tests_dir}/lec')
     for file in files:
-        convert_function(output_dir, file)
+        convert_function(tests_dir, file, create_lec=True)
     print(f'SAT formulae: {tc.value}/{len(files)}')
     print(f'UNSAT formulae: {fc.value}/{len(files)}')
     print(f'Stuck or incorrect formulae: {len(files) - tc.value - fc.value}/{len(files)}')
 
-    if os.path.exists(f'{output_dir}/abc.history'):
-        os.system(f'rm {output_dir}/abc.history')
+    lec_instances_dir = 'hdl-benchmarks/iccad-2015'
+    for d in os.listdir(lec_instances_dir):
+        create_lec_from_verilog(tests_dir, os.path.join(lec_instances_dir, d))
+
+    if os.path.exists(f'{tests_dir}/abc.history'):
+        os.system(f'rm {tests_dir}/abc.history')

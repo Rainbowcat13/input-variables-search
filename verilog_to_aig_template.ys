@@ -1,0 +1,8 @@
+read_verilog ${V_INPUT_FILE}
+
+proc; opt
+flatten -wb
+techmap; opt
+abc -g AND
+
+write_aiger ${AIG_OUTPUT_FILE}
