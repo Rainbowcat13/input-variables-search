@@ -8,26 +8,27 @@ import time
 from enum import Enum
 from functools import wraps
 from pathlib import Path
+from collections import Counter
+from itertools import combinations
+from dataclasses import dataclass
 
 import numpy as np
 from pysat.formula import CNF
 from pysat.solvers import Glucose3, Cadical195
-
-from collections import Counter
-from itertools import combinations
 
 
 class ScoreMethod(Enum):
     CONFLICTS = 1
     PROP = 2
     TOTAL = 3
+    TOTAL_OLD = 4
 
 
+@dataclass
 class CNFSchema:
-    def __init__(self, cnf: CNF, inputs: list[int], outputs: list[int]):
-        self.cnf = cnf
-        self.inputs = inputs
-        self.outputs = outputs
+    cnf: CNF
+    inputs: list[int]
+    outputs: list[int]
 
 
 def fullscan_values(assumption, set_size):
@@ -133,13 +134,13 @@ def mkdirs(*dirs):
         os.makedirs(d, exist_ok=True)
 
 
-def total_ratio(f: CNF, prop_ratio: float, conflict_ratio: float) -> float:
-    return prop_ratio / f.nv * (1 - conflict_ratio)
+def total_ratio(f: CNF, prop_ratio: float, conflict_ratio: float, old=False) -> float:
+    return prop_ratio / f.nv * (1 - conflict_ratio) if not old else prop_ratio / f.nv - conflict_ratio
 
 
-def count_total_ratio(f: CNF, solver: Glucose3 | Cadical195, cand, estimation_vector_count=200):
+def count_total_ratio(f: CNF, solver: Glucose3 | Cadical195, cand, estimation_vector_count=200, old=False):
     prop_ratio, conflict_ratio = fitness(solver, cand, estimation_vector_count)
-    return total_ratio(f, prop_ratio, conflict_ratio)
+    return total_ratio(f, prop_ratio, conflict_ratio, old)
 
 
 def score(f: CNF, s: Glucose3 | Cadical195, cand: list[int],
@@ -150,6 +151,8 @@ def score(f: CNF, s: Glucose3 | Cadical195, cand: list[int],
         return -fitness(s, cand, estimation_vector_count)[1]
     elif method == ScoreMethod.TOTAL:
         return count_total_ratio(f, s, cand, estimation_vector_count)
+    elif method == ScoreMethod.TOTAL_OLD:
+        return count_total_ratio(f, s, cand, estimation_vector_count, old=True)
     else:
         raise ValueError('Unknown score method')
 
@@ -194,9 +197,6 @@ def create_schemas_lec(s1: CNFSchema, s2: CNFSchema) -> CNF:
         raise ValueError('Schemas differ in outputs, no need to start LEC')
     # Пока не работает, если у схем входы по-разному пронумерованы
     if s1.inputs != s2.inputs:
-        print(len(s1.inputs), len(s2.inputs))
-        print(s1.inputs)
-        print(s2.inputs)
         raise ValueError('Schemas differ in inputs, no need to start LEC')
 
     outputs2 = unite_variables(s1.cnf, s2.outputs, ignore=s2.inputs, offset=len(s2.inputs))
@@ -255,6 +255,7 @@ def timeit(callback_func=None):
     return decorate
 
 
+just_timeit = timeit()
 if __name__ == '__main__':
     formula = CNF(from_file='tests/cnf/example_formula.cnf')
     g = Glucose3(formula.clauses)

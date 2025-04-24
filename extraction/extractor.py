@@ -6,10 +6,7 @@ from math import inf
 from pysat.formula import CNF
 
 from extraction.fullscan import fullscan_border
-from util.util import timeit
-
-
-just_timeit = timeit()
+from util.util import just_timeit
 
 
 class FormulaSize(Enum):
@@ -86,7 +83,7 @@ class InputsExtractor:
 
 
 if __name__ == '__main__':
-    ie = InputsExtractor(CNF(from_file='tests/cnf/example_formula.cnf'))
+    ie = InputsExtractor(CNF(from_file='tests/cnf/xor_gate.cnf'))
     ie.extract()
     print(len(ie.inputs))
     print(*ie.inputs)

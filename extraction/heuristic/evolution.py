@@ -57,10 +57,10 @@ def mutate(f: CNF, candidate: list[int]):
             mutated_indexes.append(j)
 
     mut_set = set(range(1, f.nv)) - set(candidate)
-    if not mut_set:
-        return res
 
     for index in mutated_indexes:
+        if not mut_set:
+            return res
         res[index] = random.choice(list(mut_set))
         mut_set.remove(res[index])
 
