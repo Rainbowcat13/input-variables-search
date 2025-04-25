@@ -4,13 +4,22 @@ import Levenshtein
 from pysat.formula import CNF
 from pysat.solvers import Glucose3
 
-from util.util import fitness, extract_filenames, basename_noext, mkdirs
+from util.util import fitness, extract_filenames, basename_noext, mkdirs, total_ratio
 
 total_result = []
 
 
 def solution_name(ans_filename):
     return os.path.dirname(ans_filename.split('answers/')[-1])
+
+
+def jaccard(ans: list[int], correct: list[int]):
+    if not ans or not correct:
+        return 0
+
+    set_ans = set(ans)
+    set_correct = set(correct)
+    return len(set_ans & set_correct) / len(set_ans | set_correct)
 
 
 def write_check_result(cnf_file, inputs_file, ans_file, report_file):
@@ -25,17 +34,21 @@ def write_check_result(cnf_file, inputs_file, ans_file, report_file):
 
     formula = CNF(from_file=cnf_file)
     prop_ratio, conflicts_ratio = fitness(Glucose3(formula), program_inputs, 100000)
+    tr = total_ratio(formula, prop_ratio, conflicts_ratio)
 
     lv_res = f'Levenshtein distance from real input: {Levenshtein.distance(program_inputs, correct_inputs)}'
     match_res = (f'Match with real input: '
                  f'{round(len(set(program_inputs) & set(correct_inputs)) / len(correct_inputs) * 100, 7)}%')
     prop_res = f'Propagation: {round(prop_ratio / formula.nv * 100, 7)}%'
     cfl_res = f'Conflicts: {round(conflicts_ratio * 100, 7)}%'
+    total_res = f'Total: {round(tr, 7)}'
+    jc_res = f'Jaccard: {round(jaccard(program_inputs, correct_inputs), 7)}'
     total_result.extend([f'Results for {basename_noext(cnf_file)}, solution method {solution_name(ans_file)}:',
-                         '\t' + lv_res, '\t' + match_res, '\t' + prop_res, '\t' + cfl_res, ''])
+                         '\t' + lv_res, '\t' + match_res, '\t' + jc_res,
+                         '\t' + prop_res, '\t' + cfl_res, '\t' + total_res, ''])
 
     with open(report_file, 'w') as rpf:
-        for res_piece in [lv_res, match_res, prop_res, cfl_res]:
+        for res_piece in [lv_res, match_res, jc_res, prop_res, cfl_res, total_res]:
             print(res_piece, file=rpf)
 
 

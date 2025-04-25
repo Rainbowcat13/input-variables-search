@@ -85,7 +85,7 @@ def expand(f: CNF, pickle: list[int], size_upper_bound: int, sample_size=None, c
     if show_progress_bar:
         pbar = tqdm(total=target - len(candidate), desc='Expanding candidate', leave=True, file=sys.stderr)
 
-    max_prop_ratio = -0.1
+    max_prop_ratio = -1.1
     max_prop_cand = None
     while len(candidate) < target:
         cand_list = list(candidate)

@@ -196,6 +196,7 @@ def create_schemas_lec(s1: CNFSchema, s2: CNFSchema) -> CNF:
     if len(s1.outputs) != len(s2.outputs):
         raise ValueError('Schemas differ in outputs, no need to start LEC')
     # Пока не работает, если у схем входы по-разному пронумерованы
+    # Нумеруйте одинаково
     if s1.inputs != s2.inputs:
         raise ValueError('Schemas differ in inputs, no need to start LEC')
 
@@ -232,8 +233,12 @@ def shuffle_cnf(f: CNF, fixed_mapping: dict[int, int]) -> (CNF, dict[int, int]):
     return apply_mapping(f, mapping), mapping
 
 
+def map_vars(mapping, vrs):
+    return [map_var(mapping, var) for var in vrs]
+
+
 def apply_mapping(f: CNF, mapping: dict[int, int]) -> CNF:
-    return CNF(from_clauses=[[map_var(mapping, var) for var in clause] for clause in f.clauses])
+    return CNF(from_clauses=[map_vars(mapping, clause) for clause in f.clauses])
 
 
 def timeit(callback_func=None):
@@ -253,6 +258,10 @@ def timeit(callback_func=None):
 
         return wrapper
     return decorate
+
+
+def remove_zeroes(f: CNF) -> CNF:
+    return CNF(from_clauses=[[var for var in clause if var != 0] for clause in f.clauses])
 
 
 just_timeit = timeit()

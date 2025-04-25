@@ -1,19 +1,22 @@
 from __future__ import annotations
 
+import sys
 from enum import Enum
 from math import inf
 
 from pysat.formula import CNF
 
+from extraction.orchestra import fast_orchestra
+from extraction.config import Config, CONFIG_STANDARD, CONFIG_PART, CONFIG_FULL, CONFIG_CLIPPED, CONFIG_SMALL
 from extraction.fullscan import fullscan_border
 from util.util import just_timeit
 
 
 class FormulaSize(Enum):
-    TINY = 10      # 1-10 variables
-    SMALL = 100    # 11-100 variables
+    TINY = 10  # 1-10 variables
+    SMALL = 100  # 11-100 variables
     MEDIUM = 1000  # 101-1000 variables
-    BIG = 10000    # 1001-10000 variables
+    BIG = 10000  # 1001-10000 variables
     HUGE = 100000  # 10001-100000 variables
     MASSIVE = inf  # 100001+ variables
 
@@ -51,7 +54,7 @@ class InputsExtractor:
             ExtractionMode.FULL: self._full_scan,
             ExtractionMode.SLOW: self._orchestra_full,
             ExtractionMode.EXTENDED: self._orchestra_part,
-            ExtractionMode.STANDARD: self._orchestra_part,
+            ExtractionMode.STANDARD: self._orchestra_standard,
             ExtractionMode.ACCELERATED: self._orchestra_clipped,
             ExtractionMode.FAST: self._orchestra_small_size,
         }
@@ -60,16 +63,22 @@ class InputsExtractor:
         self.inputs = fullscan_border.find_inputs(self.formula)
 
     def _orchestra_full(self):
-        pass
+        self._orchestra_with_config(CONFIG_FULL)
 
     def _orchestra_part(self):
-        pass
+        self._orchestra_with_config(CONFIG_PART)
+
+    def _orchestra_standard(self):
+        self._orchestra_with_config(CONFIG_STANDARD)
 
     def _orchestra_clipped(self):
-        pass
+        self._orchestra_with_config(CONFIG_CLIPPED)
 
     def _orchestra_small_size(self):
-        pass
+        self._orchestra_with_config(CONFIG_SMALL)
+
+    def _orchestra_with_config(self, cfg: Config):
+        self.inputs = fast_orchestra.find_inputs(self.formula, cfg)
 
     @just_timeit
     def extract(self, mode: ExtractionMode | None = None) -> list[int]:
@@ -78,12 +87,13 @@ class InputsExtractor:
 
         solve_method = self._mode_to_algorithm[mode]
         solve_method()
+        self.inputs.sort()
 
         return self.inputs
 
 
 if __name__ == '__main__':
-    ie = InputsExtractor(CNF(from_file='tests/cnf/xor_gate.cnf'))
+    ie = InputsExtractor(CNF(from_file=sys.argv[1]))
     ie.extract()
     print(len(ie.inputs))
     print(*ie.inputs)

@@ -9,16 +9,12 @@ from pysat.formula import CNF
 from pysat.solvers import Glucose3
 import aigerox
 
-from util.util import extract_filenames, mkdirs, CNFSchema, create_schemas_lec, map_var, shuffle_cnf
+from util.util import extract_filenames, mkdirs, CNFSchema, create_schemas_lec, map_var, shuffle_cnf, map_vars
 
 sys.setrecursionlimit(10 ** 9)
 tc = multiprocessing.Value('i', 0)
 fc = multiprocessing.Value('i', 0)
 stat_file = open('stats/inputs.stat', 'w')
-
-
-def map_vars(mapping, vrs):
-    return [map_var(mapping, var) for var in vrs]
 
 
 def try_solve(f, cnt1, cnt2):

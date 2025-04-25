@@ -71,7 +71,12 @@ def find_inputs(f: CNF, config: Config) -> list[int]:
 
     solver = Glucose3(bootstrap_with=f.clauses)
     # Расширяемся от некоторой выборки переменных на небольшой вход-кандидат, чтобы взять старт получше
-    start_sets = [[x] for x in random.sample(range(1, formula.nv + 1), expansion_sample_size)]
+    first_expansion_candidates = (
+        random.sample(range(1, f.nv + 1), expansion_sample_size)
+        if not config.small_expansion_no_sample
+        else range(1, f.nv + 1)
+    )
+    start_sets = [[x] for x in first_expansion_candidates]
 
     pool = None if not config.use_pool else Pool(pool_size)
 
@@ -80,7 +85,7 @@ def find_inputs(f: CNF, config: Config) -> list[int]:
             pool.imap_unordered(
                 expand_unpacked,
                 [((
-                      formula,
+                      f,
                       start_set,
                       config.expansion_start_size
                   ), {'show_progress_bar': False}) for start_set in start_sets]
@@ -91,15 +96,20 @@ def find_inputs(f: CNF, config: Config) -> list[int]:
             total=expansion_sample_size, desc='First small expanding', file=sys.stderr
         ))
 
-    total_ratios = [(score(formula, solver, st[0], config.estimation_vector_count, config.score_method), i)
+    total_ratios = [(score(f, solver, st[0], config.estimation_vector_count, config.score_method), i)
                     for i, st in enumerate(start_sets)]
     total_ratios.sort(key=lambda ratio_num: -ratio_num[0])
     # Выбираем несколько лучших небольших множеств
     best = [(start_sets[i], tr) for tr, i in total_ratios[:config.expansion_candidates_count]]
 
+    try:
+        print(score(f, solver, best[0][0][0], config.estimation_vector_count, ScoreMethod.CONFLICTS))
+    except:
+        pass
+
     expanded_sets = [expand_unpacked((
         (
-            formula,
+            f,
             st[0],
             config.input_size_upper_bound
         ),
@@ -108,7 +118,7 @@ def find_inputs(f: CNF, config: Config) -> list[int]:
             'sample_size': None if config.big_expansion_no_sample else expansion_sample_size,
             'pool': pool if config.use_pool else None,
             'pool_chunk_size': (
-                                   formula.nv
+                                   f.nv
                                    if config.big_expansion_no_sample
                                    else expansion_sample_size
                                ) // pool_size,
@@ -126,21 +136,21 @@ def find_inputs(f: CNF, config: Config) -> list[int]:
                                              generations=config.evolution_generations_count,
                                              estimation_vector_count=config.estimation_vector_count)
 
-            evoluted, ratio_sum = evolution(params, formula, [current_cand])
+            evoluted, ratio_sum = evolution(params, f, [current_cand])
             final_candidates.append(evoluted)
 
     for i in range(len(final_candidates)):
-        conflict_ratio = -score(formula, solver, final_candidates[i], config.estimation_vector_count, ScoreMethod.CONFLICTS)
+        conflict_ratio = -score(f, solver, final_candidates[i], config.estimation_vector_count, ScoreMethod.CONFLICTS)
         with tqdm(desc=f'Candidate {i} cut iterations', leave=False, file=sys.stderr) as pbar:
             it = 0
             while conflict_ratio > config.cut_conflict_border and it < config.cut_iterations_count:
-                final_candidates[i] = cut(formula, final_candidates[i], config.estimation_vector_count)
-                conflict_ratio = -score(formula, solver, final_candidates[i],
+                final_candidates[i] = cut(f, final_candidates[i], config.estimation_vector_count)
+                conflict_ratio = -score(f, solver, final_candidates[i],
                                         config.estimation_vector_count, ScoreMethod.CONFLICTS)
                 pbar.update(1)
                 it += 1
 
-    best, pts_best = choose_best(formula, solver, final_candidates, config.estimation_vector_count, ScoreMethod.TOTAL)
+    best, pts_best = choose_best(f, solver, final_candidates, config.estimation_vector_count, ScoreMethod.TOTAL)
     sys.stderr.write(f'Score: {round(pts_best, 5)}\n')
 
     return best

@@ -1,17 +1,18 @@
 import sys
 
 from pysat.formula import CNF
-from pysat.solvers import Glucose3, Cadical195
+from pysat.solvers import Glucose3
 from scipy import stats
 from tqdm import tqdm
 
-from util.util import random_assumptions, xor_cnf, CNFSchema, create_schemas_lec, timeit
+from extraction.extractor import InputsExtractor
+from util.util import random_assumptions, xor_cnf, CNFSchema, create_schemas_lec, timeit, remove_zeroes
 
-TASKS_COUNT = 20
+TASKS_COUNT = 200
 
 
 def extract_inputs(lec_instance: CNF):
-    return list(range(1, 129))
+    return InputsExtractor(lec_instance).extract()
 
 
 def remove_miter(lec_instance: CNF) -> (CNF, list[int]):
@@ -24,7 +25,7 @@ def construct_lambdas(inputs: list[int], max_var_num: int) -> (list[list[int]], 
     lambdas = []
     lambdas_outputs = []
     n = len(inputs)
-    for i in range(0, n, 2):
+    for i in range(0, n - 1, 2):
         lambdas_outputs.append(max_var_num)
         lambdas.extend(xor_cnf(inputs[i], inputs[i + 1], max_var_num))
         max_var_num += 1
@@ -62,8 +63,13 @@ def inputs_outputs(filename):
 def estimation(lec_instance: CNF):
     lec_without_miter, miter = remove_miter(lec_instance)
     inputs = extract_inputs(lec_without_miter)
+    print(inputs)
 
     time_estimations = estimate_lec(lec_instance, inputs)
+
+    dsc = stats.describe(time_estimations, ddof=1)
+    sys.stderr.write(f'Dispersion: {dsc.variance:.9f}\n')
+
     total_time_prediction = (sum(time_estimations) / TASKS_COUNT) * 2 ** (len(inputs) - 1)
     sys.stderr.write(f'Based on inputs SAT solving will take approximately {total_time_prediction} s.\n')
     return time_estimations
@@ -82,8 +88,6 @@ if __name__ == '__main__':
         inputs_outputs('tests/outputs/xor_gate.outputs')
     )
 
-    lec = create_schemas_lec(adder, adder)
+    lec = remove_zeroes(CNF(from_file='tests/lec/unit10.cnf'))
 
-    tms = estimate_lec(lec, adder.inputs)
-    description = stats.describe(tms, ddof=1)
-    print(f'Dispersion: {description.variance:.9f}')
+    estimation(lec)

@@ -9,27 +9,31 @@ from util.util import mkdirs
 
 if __name__ == '__main__':
     path_to_lec = 'tests/lec'
-    wanted = [
-        'div_div.cnf', 'multiplier_multiplier.cnf'
+    not_wanted = [
+        "arbiter.cnf", "bar.cnf", "dec.cnf", "div.cnf", "hyp.cnf", "i2c.cnf",
+        "int2float.cnf", "log2.cnf",
+        "max.cnf", "multiplier.cnf", "priority.cnf", "router.cnf", "sin.cnf", "sqrt.cnf", "square.cnf",
+        "voter.cnf"
     ]
 
-    estimations = []
+    var_coeffs = []
     mkdirs('stats/lec')
-    for lec_instance_file in wanted:
+    for lec_instance_file in os.listdir('tests/lec'):
+        if lec_instance_file.split('_')[-1] in not_wanted:
+            print('skip')
+            continue
         stat_file = os.path.join('stats/lec', lec_instance_file.replace('.cnf', '.stat'))
         lec_instance = CNF(from_file=os.path.join(path_to_lec, lec_instance_file))
         estimation = lec.estimation(lec_instance)
-        estimations.append(np.var(estimation, ddof=0))
 
         with open(stat_file, 'w') as sf:
-            sf.write(' '.join(map(str, estimations)))
+            sf.write(' '.join(map(str, estimation)))
 
-    plt.figure(figsize=(24, 16), dpi=300)
-    plt.plot(wanted, estimations, marker='o', linestyle='-')
-    # plt.bar(indices, variances)
+        estimation = np.array(estimation, dtype=float)
+        mu = estimation.mean()
+        sigma = estimation.std(ddof=0)
+        # коэффициент вариации, чтобы не зависеть от величины времени дисперсии
+        var_coeffs.append(sigma / mu if mu != 0 else np.nan)
 
-    plt.xlabel('Номер инстанса')
-    plt.ylabel('Дисперсия времени (сек²)')
-    plt.title('Сравнение дисперсий времени работы по инстансам')
-    plt.grid(True, which='both', ls='--', lw=0.5)
-    plt.show()
+    with open('stats/lec/cov_stat_total.stat', 'r') as cov_total:
+        cov_total.write(*map(str, filter(lambda x: not np.isnan(x), var_coeffs)))
