@@ -55,8 +55,8 @@ def precount_set_order(formula: CNF, solver: Glucose3 | Cadical195, level=2):
     return [list(item[0]) for item in assumptions_with_result_powers]
 
 
-def var_frequency(formula: CNF):
-    counter = Counter(assumption_key(sum(formula.clauses, [])))
+def var_frequency(f: CNF):
+    counter = Counter(assumption_key(sum(f.clauses, [])))
     return {var_name: count for (var_name, count) in counter.most_common()}
 
 
@@ -262,6 +262,11 @@ def timeit(callback_func=None):
 
 def remove_zeroes(f: CNF) -> CNF:
     return CNF(from_clauses=[[var for var in clause if var != 0] for clause in f.clauses])
+
+
+def inputs_outputs(filename):
+    with open(filename, 'r') as f:
+        return [int(x) for x in f.readlines()[-1].strip().split()]
 
 
 just_timeit = timeit()

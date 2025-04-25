@@ -6,7 +6,7 @@ from scipy import stats
 from tqdm import tqdm
 
 from extraction.extractor import InputsExtractor
-from util.util import random_assumptions, xor_cnf, CNFSchema, create_schemas_lec, timeit, remove_zeroes
+from util.util import random_assumptions, xor_cnf, CNFSchema, create_schemas_lec, timeit, remove_zeroes, inputs_outputs
 
 TASKS_COUNT = 200
 
@@ -53,11 +53,6 @@ def estimate_lec(lec_instance: CNF, inputs: list[int]) -> list[float]:
         sys.stderr.write(f'Cannot find SAT on {TASKS_COUNT} examples.\n')
 
     return times
-
-
-def inputs_outputs(filename):
-    with open(filename, 'r') as f:
-        return [int(x) for x in f.readlines()[-1].strip().split()]
 
 
 def estimation(lec_instance: CNF):

@@ -7,7 +7,8 @@ from math import inf
 from pysat.formula import CNF
 
 from extraction.orchestra import fast_orchestra
-from extraction.config import Config, CONFIG_STANDARD, CONFIG_PART, CONFIG_FULL, CONFIG_CLIPPED, CONFIG_SMALL
+from extraction.config import (Config, CONFIG_STANDARD, CONFIG_PART,
+                               CONFIG_FULL, CONFIG_CLIPPED, CONFIG_SMALL, CONFIG_NON_SCHEMAS)
 from extraction.fullscan import fullscan_border
 from util.util import just_timeit
 
@@ -33,6 +34,8 @@ class ExtractionMode(Enum):
     ACCELERATED = 'accelerated'
     FAST = 'fast'
 
+    NON_SCHEMA = 'non_schema'
+
 
 SIZE_TO_MODE = {
     FormulaSize.TINY: ExtractionMode.FULL,
@@ -57,6 +60,7 @@ class InputsExtractor:
             ExtractionMode.STANDARD: self._orchestra_standard,
             ExtractionMode.ACCELERATED: self._orchestra_clipped,
             ExtractionMode.FAST: self._orchestra_small_size,
+            ExtractionMode.NON_SCHEMA: self._non_schema
         }
 
     def _full_scan(self):
@@ -76,6 +80,9 @@ class InputsExtractor:
 
     def _orchestra_small_size(self):
         self._orchestra_with_config(CONFIG_SMALL)
+
+    def _non_schema(self):
+        self._orchestra_with_config(CONFIG_NON_SCHEMAS)
 
     def _orchestra_with_config(self, cfg: Config):
         self.inputs = fast_orchestra.find_inputs(self.formula, cfg)
