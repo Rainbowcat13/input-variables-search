@@ -13,7 +13,7 @@ from util.util import var_frequency, extract_filenames, basename_noext, inputs_o
 CHUNKS_COUNT = 10
 
 
-total_distribution = []
+total_distribution = [0] * CHUNKS_COUNT
 for cnf_filename in tqdm(os.listdir('tests/cnf'), file=sys.stderr, desc='Distributing'):
     cnf_filename = os.path.join('tests/cnf', cnf_filename)
     bn = basename_noext(cnf_filename)
@@ -22,9 +22,12 @@ for cnf_filename in tqdm(os.listdir('tests/cnf'), file=sys.stderr, desc='Distrib
     inputs = set(inputs_outputs(os.path.join('tests/inputs', f'{bn}.inputs')))
 
     freq = var_frequency(formula)
-    chunks = list(chunked(freq, CHUNKS_COUNT))
+    chunks = list(chunked(freq, len(freq) // CHUNKS_COUNT + 1))
 
-    total_distribution = [was + len(set(chunk) & inputs) for was, chunk in zip(total_distribution, chunks)]
+    for idx, chunk in enumerate(chunks):
+        for element in chunk:
+            if element in inputs:
+                total_distribution[idx] += 1
 
 
 plt.figure(figsize=(24, 16), dpi=300)
