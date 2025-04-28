@@ -128,29 +128,31 @@ def create_lec_from_verilog(output_dir, v_dir):
 
     lec_schema = create_schemas_lec(*schemas)
     lec_schema.to_file(f'{output_dir}/lec/{lec_instance_name}.cnf')
+    with open(f'{output_dir}/inputs/{lec_instance_name}.inputs', 'w') as inp_f:
+        inp_f.write(f'{len(schemas[0].inputs)}\n{" ".join(map(str, schemas[0].inputs))}')
 
 
 if __name__ == '__main__':
     tests_dir = 'tests'
 
-    benchmarks_dirs = ['benchmarks/arithmetic',
-                       'benchmarks/random_control',
-                       'iwls2024-ls-contest/submissions/USTC_and_Huawei/aig']
-    aig_files = extract_filenames(benchmarks_dirs, '.aig')
-    blif_files = extract_filenames(benchmarks_dirs, '.blif')
-
-    files = blif_files
-    convert_function = convert_blif
-    if '--aig' in sys.argv:
-        convert_function = convert_aig
-        files = aig_files
-    mkdirs(f'{tests_dir}/aag', f'{tests_dir}/aig', f'{tests_dir}/cnf',
-           f'{tests_dir}/inputs', f'{tests_dir}/outputs', f'{tests_dir}/lec')
-    for file in files:
-        convert_function(tests_dir, file, create_lec=True)
-    print(f'SAT formulae: {tc.value}/{len(files)}')
-    print(f'UNSAT formulae: {fc.value}/{len(files)}')
-    print(f'Stuck or incorrect formulae: {len(files) - tc.value - fc.value}/{len(files)}')
+    # benchmarks_dirs = ['benchmarks/arithmetic',
+    #                    'benchmarks/random_control',
+    #                    'iwls2024-ls-contest/submissions/USTC_and_Huawei/aig']
+    # aig_files = extract_filenames(benchmarks_dirs, '.aig')
+    # blif_files = extract_filenames(benchmarks_dirs, '.blif')
+    #
+    # files = blif_files
+    # convert_function = convert_blif
+    # if '--aig' in sys.argv:
+    #     convert_function = convert_aig
+    #     files = aig_files
+    # mkdirs(f'{tests_dir}/aag', f'{tests_dir}/aig', f'{tests_dir}/cnf',
+    #        f'{tests_dir}/inputs', f'{tests_dir}/outputs', f'{tests_dir}/lec')
+    # for file in files:
+    #     convert_function(tests_dir, file, create_lec=True)
+    # print(f'SAT formulae: {tc.value}/{len(files)}')
+    # print(f'UNSAT formulae: {fc.value}/{len(files)}')
+    # print(f'Stuck or incorrect formulae: {len(files) - tc.value - fc.value}/{len(files)}')
 
     lec_instances_dir = 'hdl-benchmarks/iccad-2015'
     for d in os.listdir(lec_instances_dir):
