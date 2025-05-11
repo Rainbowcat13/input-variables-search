@@ -38,30 +38,39 @@ class Metrics:
 
 
 plt.figure(figsize=(24, 16), dpi=300)
-plt.ylabel('Количество схем с такой метрикой', fontsize=40)
-plt.xlabel('Диапазон метрик', fontsize=40)
-plt.title('Оценка корректности алгоритма нахождения входов', fontsize=40)
+plt.ylabel('Количество схем с таким значением', fontsize=40)
+plt.xlabel('Диапазоны значений доли выведенных', fontsize=40)
+plt.title('Оценка корректности алгоритма нахождения входов.\nСредняя доля выведенных переменных на подстановку', fontsize=40)
 
 totals = np.array([])
 jaccards = np.array([])
-for file in extract_filenames(['answers/fast_orchestra/extra_slow'], '.check'):
-    metrics = Metrics(filename=os.path.join('answers/fast_orchestra/extra_slow', file))
-    totals = np.append(totals, metrics.total)
+for file in sorted(filter(lambda f: f.endswith('.check') and 'ex' in f, os.listdir('answers/extractor')),
+                   key=lambda x: int(x.split('.')[0].strip('ex'))):
+    print(file)
+    # if 'ex60' in file:
+    #     print('pizda')
+    #     break
+    metrics = Metrics(filename=os.path.join('answers/extractor', file))
+    totals = np.append(totals, metrics.propagation)
+    print(metrics.jaccard)
     jaccards = np.append(jaccards, metrics.jaccard)
 
 n = len(totals)
 idxs = list(range(1, n + 1))
 
-thresholds = np.arange(0.05, 1, 0.05)
+thresholds = np.arange(0.05, 1.01, 0.05)
 counts = [
     sum([
-        (thresholds[i - 1] if i > 0 else 0) <= j < thresholds[i]
-        for j in jaccards
+        (thresholds[i - 1] if i > 0 else 0) <= j <= thresholds[i]
+        for j in totals
     ]) for i in range(len(thresholds))
 ]
 
-plt.bar([f'{t:.2f}' for t in thresholds], counts, color='green')
+print(counts)
+print([f'{t:.2f}' for t in thresholds])
+plt.bar([f'{t:.2f}' for t in thresholds], counts, color='blue')
 plt.xticks(fontsize=20)
 plt.yticks(fontsize=40)
 plt.grid(True)
-plt.savefig('stats/jaccards.png')
+plt.savefig('stats/prop.png')
+# plt.show()
