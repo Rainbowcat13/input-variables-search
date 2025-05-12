@@ -85,18 +85,18 @@ plt.xticks(fontsize=40)
 plt.yticks(fontsize=40)
 plt.plot(x, data_inp, marker='o', linestyle='-', linewidth=1.5, label='Дисперсия на входах', color='green')
 plt.axhline(inp_mean, color='cyan', linestyle='--', linewidth=1.2,
-            label=f'Среднее дисперсии на входах = {inp_mean:.2f}')
+            label=f'Среднее дисперсии на входах = {inp_mean:.8f}')
 plt.fill_between(x, inp_mean - inp_std, inp_mean + inp_std,
                  color='lightgreen', alpha=0.1,
-                 label=f'Зона ±1σ для входов ({inp_std:.2f})')
+                 label=f'Зона ±1σ для входов ({inp_std:.8f})')
 
 plt.plot(x, data_rnd, marker='o', linestyle='-', linewidth=1.5, label='Дисперсия на случайном мн-ве',
          color='red')
 plt.axhline(rnd_mean, color='brown', linestyle='--', linewidth=1.2,
-            label=f'Среднее дисперсии на случайном мн-ве = {inp_mean:.2f}')
+            label=f'Среднее дисперсии на случайном мн-ве = {inp_mean:.8f}')
 plt.fill_between(x, rnd_mean - rnd_std, rnd_mean + rnd_std,
                  color='lightcoral', alpha=0.1,
-                 label=f'Зона ±1σ для случайного мн-ва ({rnd_std:.2f})')
+                 label=f'Зона ±1σ для случайного мн-ва ({rnd_std:.8f})')
 
 plt.xlabel('Подстановки', fontsize=40)
 plt.ylabel('Отнормированное время работы на подстановке', fontsize=40)
@@ -105,5 +105,5 @@ plt.yscale('log')
 # plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.08), ncol=6, fontsize=25)
 plt.legend(fontsize=25)
 plt.grid(True)
-# plt.tight_layout()
+plt.tight_layout()
 plt.savefig('stats/disp_one_schema.png')

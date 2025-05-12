@@ -44,16 +44,14 @@ def count_ratios(f: CNF, candidate: list[int], new_vars: list[int], estimation_v
     return ratios
 
 
-def count_min_conflict_var(ratios: list[tuple[float, float]], new_vars: list[int]) -> (int | None, float):
-    min_conflict_ratio = 1.01
-    min_conflict_var = None
-    for idx, ratio in enumerate(ratios):
-        prop_ratio, conflict_ratio = ratio
-        if conflict_ratio < min_conflict_ratio:
-            min_conflict_var = new_vars[idx]
-            min_conflict_ratio = conflict_ratio
-
-    return min_conflict_var, min_conflict_ratio
+def count_good_conflict_var(
+        ratios: list[tuple[float, float]],
+        new_vars: list[int],
+        inverted: bool = False
+) -> (int | None, float):
+    choice = max if inverted else min
+    idx, ratio = choice(enumerate(ratios), key=lambda rs: rs[1][1])
+    return new_vars[idx], ratio[1]
 
 
 def expand_one_step(f: CNF, candidate: list[int], sample_size=None,
@@ -65,7 +63,7 @@ def expand_one_step(f: CNF, candidate: list[int], sample_size=None,
 
     new_vars = random.sample(non_used, sample_size) if sample_size is not None else non_used
     ratios = count_ratios(f, candidate, new_vars, estimation_vector_count, pool)
-    min_conflict_var, _ = count_min_conflict_var(ratios, new_vars)
+    min_conflict_var, _ = count_good_conflict_var(ratios, new_vars)
 
     if min_conflict_var is None:
         return candidate
@@ -73,9 +71,11 @@ def expand_one_step(f: CNF, candidate: list[int], sample_size=None,
     return candidate + [min_conflict_var]
 
 
-def expand(f: CNF, pickle: list[int], size_upper_bound: int, sample_size=None, conflict_border=None,
-           estimation_vector_count=ESTIMATION_VECTOR_COUNT, pool=None, break_on_decline=False,
-           pool_chunk_size=None, show_progress_bar=True, zero_conflict_tolerance=False) -> tuple[list[int], list[int]]:
+def expand(
+        f: CNF, pickle: list[int], size_upper_bound: int, sample_size=None, conflict_border=None,
+        estimation_vector_count=ESTIMATION_VECTOR_COUNT, pool=None, break_on_decline=False,
+        pool_chunk_size=None, show_progress_bar=True, zero_conflict_tolerance=False, inverted=False
+) -> tuple[list[int], list[int]]:
     candidate = set(pickle)
     non_used = set(range(1, f.nv + 1)) - candidate
     prev_min_ratio = 1
@@ -102,7 +102,7 @@ def expand(f: CNF, pickle: list[int], size_upper_bound: int, sample_size=None, c
         ratios = count_ratios(f, cand_list, new_vars, estimation_vector_count,
                               pool=pool, pool_chunk_size=pool_chunk_size,
                               zero_conflict_tolerance=zero_conflict_tolerance)
-        min_conflict_var, min_conflict_ratio = count_min_conflict_var(ratios, new_vars)
+        min_conflict_var, min_conflict_ratio = count_good_conflict_var(ratios, new_vars, inverted=inverted)
 
         if any([
             min_conflict_var is None,

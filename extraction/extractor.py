@@ -8,7 +8,7 @@ from pysat.formula import CNF
 
 from extraction.orchestra import fast_orchestra
 from extraction.config import (Config, CONFIG_STANDARD, CONFIG_PART,
-                               CONFIG_FULL, CONFIG_CLIPPED, CONFIG_SMALL, CONFIG_NON_SCHEMAS)
+                               CONFIG_FULL, CONFIG_CLIPPED, CONFIG_SMALL, CONFIG_NON_SCHEMAS, CONFIG_SAT)
 from extraction.fullscan import fullscan_border
 from util.util import just_timeit
 
@@ -35,6 +35,7 @@ class ExtractionMode(Enum):
     FAST = 'fast'
 
     NON_SCHEMA = 'non_schema'
+    SAT = 'sat'
 
 
 SIZE_TO_MODE = {
@@ -60,7 +61,8 @@ class InputsExtractor:
             ExtractionMode.STANDARD: self._orchestra_standard,
             ExtractionMode.ACCELERATED: self._orchestra_clipped,
             ExtractionMode.FAST: self._orchestra_small_size,
-            ExtractionMode.NON_SCHEMA: self._non_schema
+            ExtractionMode.NON_SCHEMA: self._non_schema,
+            ExtractionMode.SAT: self._sat
         }
 
     def _full_scan(self):
@@ -84,6 +86,9 @@ class InputsExtractor:
     def _non_schema(self):
         self._orchestra_with_config(CONFIG_NON_SCHEMAS)
 
+    def _sat(self):
+        self._orchestra_with_config(CONFIG_SAT)
+
     def _orchestra_with_config(self, cfg: Config):
         self.inputs = fast_orchestra.find_inputs(self.formula, cfg)
 
@@ -101,6 +106,13 @@ class InputsExtractor:
 
 if __name__ == '__main__':
     ie = InputsExtractor(CNF(from_file=sys.argv[1]))
-    ie.extract()
+    m = None
+    if len(sys.argv) > 2:
+        if sys.argv[2] == '--non-schemas':
+            m = ExtractionMode.NON_SCHEMA
+        elif sys.argv[2] == '--sat':
+            m = ExtractionMode.SAT
+
+    ie.extract(mode=m)
     print(len(ie.inputs))
     print(*ie.inputs)

@@ -16,6 +16,7 @@ plt.xlabel('Количество переменных в формуле', fontsi
 plt.ylabel('Количество переменных во входе', fontsize=50)
 
 plt.xscale('log')
+plt.yscale('log')
 
 plt.title('Взаимосвязь между размером формулы и размером входа', fontsize=50)
 plt.grid(True)

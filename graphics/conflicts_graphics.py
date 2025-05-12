@@ -2,6 +2,7 @@ import os
 import sys
 
 import matplotlib.pyplot as plt
+from statsmodels.nonparametric.smoothers_lowess import lowess
 
 
 wanted_schemas = sys.argv[1:]
@@ -29,10 +30,13 @@ for file in os.listdir('stats/evolution'):
         if schema_name in wanted_schemas:
             ratios = [float(line.strip().split()[1]) for line in stat_file.readlines()]
             xs = list(range(1, len(ratios) + 1))
-            plt.plot(xs, ratios, color=colors[schema_name], label=schema_name, linewidth=7.0)
+            smoothed = lowess(endog=ratios, exog=xs, frac=0.15, it=0)
+            plt.scatter(xs, ratios, color=colors[schema_name], linewidth=3.0, alpha=0.5)
+            plt.plot(smoothed[:, 0], smoothed[:, 1], label=f'{schema_name}', linewidth=7.0)
+
             plt.xticks(fontsize=40)
             plt.yticks(fontsize=40)
 
 plt.grid(True)
 plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.08), ncol=n_graphics, fontsize=25)
-plt.savefig(f'stats/evolution/{"_".join(wanted_schemas)}.png')
+plt.savefig(f'stats/evolution/{"_".join(wanted_schemas)}_smoothed.png')

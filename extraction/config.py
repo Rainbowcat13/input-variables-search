@@ -21,6 +21,7 @@ class Config:
     expansion_sample_size: int = 700
     cut_iterations_count: int = 5
     cut_conflict_border: float = 0.0
+    inverted: bool = False
 
 
 CONFIG_FULL = Config(
@@ -121,7 +122,7 @@ CONFIG_SMALL = Config(
 CONFIG_NON_SCHEMAS = Config(
     random_seed=13,
     break_on_decline=False,
-    zero_conflict_tolerance=True,
+    zero_conflict_tolerance=False,
     expansion_conflict_border=0.9,
     estimation_vector_count=100,
     big_expansion_no_sample=False,
@@ -130,9 +131,29 @@ CONFIG_NON_SCHEMAS = Config(
     expansion_candidates_count=1,
     score_method=ScoreMethod.TOTAL,
     use_pool=True,
-    evolution_generations_count=5000,
-    expansion_start_size=2,
+    evolution_generations_count=1000,
+    expansion_start_size=3,
     expansion_sample_size=7500,
-    cut_iterations_count=10,
+    cut_iterations_count=2,
     cut_conflict_border=0.0
+)
+
+CONFIG_SAT = Config(
+    random_seed=13,
+    break_on_decline=False,
+    zero_conflict_tolerance=False,
+    expansion_conflict_border=1.1,
+    estimation_vector_count=100,
+    big_expansion_no_sample=True,
+    small_expansion_no_sample=True,
+    input_size_upper_bound=100,
+    expansion_candidates_count=1,
+    score_method=ScoreMethod.TOTAL,
+    use_pool=True,
+    evolution_generations_count=1000,
+    expansion_start_size=3,
+    expansion_sample_size=7500,
+    cut_iterations_count=0,
+    cut_conflict_border=0.0,
+    inverted=True
 )

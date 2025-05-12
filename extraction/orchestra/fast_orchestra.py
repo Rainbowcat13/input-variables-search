@@ -16,7 +16,6 @@ from extraction.heuristic.greedy_expansion import expand
 from util.util import score, ScoreMethod
 from extraction.heuristic.evolution import create_evolution_params, evolution
 
-
 pool_size = psutil.cpu_count(logical=False)
 
 
@@ -56,6 +55,10 @@ def choose_best(f: CNF, g: Glucose3, candidates: list[list[int]],
     best_pts = -1.1
     for candidate in candidates:
         pts = score(f, g, candidate, estimation_vector_cnt, score_method)
+        ptsc = score(f, g, candidate, estimation_vector_cnt, ScoreMethod.CONFLICTS)
+        print('ptsc', ptsc)
+        ptsp = score(f, g, candidate, estimation_vector_cnt, ScoreMethod.PROP)
+        print('ptsp', ptsp)
         if best_cand is None or pts > best_pts:
             best_cand = candidate
             best_pts = pts
@@ -88,11 +91,12 @@ def find_inputs(f: CNF, config: Config) -> list[int]:
                       f,
                       start_set,
                       config.expansion_start_size
-                  ), {'show_progress_bar': False}) for start_set in start_sets]
+                  ), {'show_progress_bar': False, 'inverted': config.inverted}) for start_set in start_sets]
             ), total=expansion_sample_size, desc='First small expanding', file=sys.stderr))
     else:
         start_sets = list(tqdm(
-            [expand(f, start_set, config.expansion_start_size, show_progress_bar=False) for start_set in start_sets],
+            [expand(f, start_set, config.expansion_start_size, show_progress_bar=False, inverted=config.inverted) for
+             start_set in start_sets],
             total=expansion_sample_size, desc='First small expanding', file=sys.stderr
         ))
 
@@ -102,6 +106,7 @@ def find_inputs(f: CNF, config: Config) -> list[int]:
     # Выбираем несколько лучших небольших множеств
     best = [(start_sets[i], tr) for tr, i in total_ratios[:config.expansion_candidates_count]]
 
+    # best = [(([2, 2619, 4494], [2, 2619, 4494]), 0.5)]
     try:
         print(score(f, solver, best[0][0][0], config.estimation_vector_count, ScoreMethod.CONFLICTS))
     except:
@@ -123,7 +128,8 @@ def find_inputs(f: CNF, config: Config) -> list[int]:
                                    else expansion_sample_size
                                ) // pool_size,
             'zero_conflict_tolerance': config.zero_conflict_tolerance,
-            'conflict_border': config.expansion_conflict_border
+            'conflict_border': config.expansion_conflict_border,
+            'inverted': config.inverted
         })
     ) for st, _ in best]
 
@@ -141,23 +147,24 @@ def find_inputs(f: CNF, config: Config) -> list[int]:
 
     for i in range(len(final_candidates)):
         conflict_ratio = -score(f, solver, final_candidates[i], config.estimation_vector_count, ScoreMethod.CONFLICTS)
-        with tqdm(desc=f'Candidate {i} cut iterations', leave=False, file=sys.stderr) as pbar:
-            it = 0
-            while conflict_ratio > config.cut_conflict_border and it < config.cut_iterations_count:
-                final_candidates[i] = cut(f, final_candidates[i], config.estimation_vector_count)
-                conflict_ratio = -score(f, solver, final_candidates[i],
-                                        config.estimation_vector_count, ScoreMethod.CONFLICTS)
-                pbar.update(1)
-                it += 1
+        pbar = tqdm(total=config.cut_iterations_count, desc=f'Candidate {i} cut iterations',
+                    leave=True, file=sys.stderr)
+        it = 0
+        while conflict_ratio > config.cut_conflict_border and it < config.cut_iterations_count:
+            final_candidates[i] = cut(f, final_candidates[i], config.estimation_vector_count)
+            conflict_ratio = -score(f, solver, final_candidates[i],
+                                    config.estimation_vector_count, ScoreMethod.CONFLICTS)
+            pbar.update(1)
+            it += 1
 
     best, pts_best = choose_best(f, solver, final_candidates, config.estimation_vector_count, ScoreMethod.TOTAL)
-    sys.stderr.write(f'Score: {round(pts_best, 5)}\n')
+    time.sleep(1)
+    sys.stderr.write(f'\nScore: {round(pts_best, 5)}\n')
 
     return best
 
 
 default_config = Config()
-
 
 if __name__ == '__main__':
     freeze_support()

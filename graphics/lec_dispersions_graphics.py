@@ -44,7 +44,7 @@ if __name__ == '__main__':
     cnt2 = 0
     mxcr = 0
     for lsf_ans, lsf_ideal, lsf_random in zip(
-        ans_files, ideal_files, random_files
+            ans_files, ideal_files, random_files
     ):
         lsf_ans = os.path.join(path_to_lec, lsf_ans)
         lsf_ideal = os.path.join(path_to_lec, lsf_ideal)
@@ -119,7 +119,10 @@ if __name__ == '__main__':
     plt.figure(figsize=(24, 16), dpi=300)
     plt.ylabel('Величина коэффициента вариации', fontsize=40)
     plt.xlabel('Схемы', fontsize=40)
-    plt.title('Коэффициент вариации\n для оценок подстановок входов на различных схемах', fontsize=40)
+    plt.title(
+        'Коэффициент вариации времён работы SAT-решателя\n для оценок подстановок входов на различных схемах',
+        fontsize=40
+    )
 
     plt.xticks(x, fontsize=40)
     plt.yticks(fontsize=40)
