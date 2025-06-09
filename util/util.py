@@ -269,6 +269,12 @@ def inputs_outputs(filename):
         return [int(x) for x in f.readlines()[-1].strip().split()]
 
 
+def remove_miter(lec_instance: CNF) -> (CNF, list[int]):
+    miter = max(lec_instance.clauses, key=lambda clause: len(clause))
+    (new_clauses := lec_instance.clauses + []).remove(miter)
+    return CNF(from_clauses=new_clauses), miter
+
+
 just_timeit = timeit()
 if __name__ == '__main__':
     formula = CNF(from_file='tests/cnf/example_formula.cnf')

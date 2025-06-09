@@ -26,8 +26,8 @@ def write_check_result(cnf_file, inputs_file, ans_file, report_file):
     with open(inputs_file, "r") as inp_f:
         program_inputs = [int(x) for x in inp_f.readlines()[1].strip().split()]
     with open(ans_file, "r") as ans_f:
-        if len(lines := ans_f.readlines()) == 2:
-            correct_inputs = [int(x) for x in lines[1].strip().split()]
+        if len(lines := ans_f.readlines()) == 3:
+            correct_inputs = [int(x) for x in lines[2].strip().split()]
         else:
             print(f'.ans file corrupted, no report for {ans_file}')
             return
@@ -54,7 +54,7 @@ def write_check_result(cnf_file, inputs_file, ans_file, report_file):
 
 cnf_files = list(sorted(extract_filenames(['tests/cnf'], '.cnf')))
 input_files = list(sorted(extract_filenames(['tests/inputs'], '.inputs')))
-ans_files = list(sorted(extract_filenames(['answers/fast_orchestra/extra_slow'], '.ans')))
+ans_files = list(sorted(extract_filenames(['answers/extractor'], '.ans')))
 ans_count = len(ans_files)
 cnf_count = len(cnf_files)
 

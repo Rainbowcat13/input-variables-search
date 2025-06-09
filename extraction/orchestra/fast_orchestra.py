@@ -13,7 +13,7 @@ import psutil
 from extraction.config import Config
 from extraction.heuristic.cut_conflicts import cut
 from extraction.heuristic.greedy_expansion import expand
-from util.util import score, ScoreMethod
+from util.util import score, ScoreMethod, remove_zeroes
 from extraction.heuristic.evolution import create_evolution_params, evolution
 
 pool_size = psutil.cpu_count(logical=False)
@@ -70,6 +70,7 @@ def find_inputs(f: CNF, config: Config) -> list[int]:
     random.seed(config.random_seed)
     np.random.seed(config.random_seed)
 
+    f = remove_zeroes(f)
     expansion_sample_size = min(config.expansion_sample_size, f.nv)
 
     solver = Glucose3(bootstrap_with=f.clauses)
