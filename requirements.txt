@@ -7,3 +7,5 @@ aigerox
 psutil
 python-sat
 scipy
+more_itertools
+statsmodels
