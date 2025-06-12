@@ -55,7 +55,6 @@ def estimation(lec_instance: CNF, inputs=None):
     lec_without_miter, miter = remove_miter(lec_instance)
     inputs = extract_inputs(lec_without_miter)
     inputs = random.sample(list(range(1, lec_instance.nv + 1)), len(inputs))
-    # print(inputs)
 
     time_estimations = estimate_lec(lec_instance, inputs)
 

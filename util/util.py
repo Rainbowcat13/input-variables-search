@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import multiprocessing
 import math
 import os
 import random
@@ -22,6 +23,12 @@ class ScoreMethod(Enum):
     PROP = 2
     TOTAL = 3
     TOTAL_OLD = 4
+
+
+class ConflictTolerance(Enum):
+    ZERO = 1
+    NORMAL = 2
+    HIGH = 3
 
 
 @dataclass
@@ -73,7 +80,7 @@ def random_assumptions(vector: list[int], num_assumptions=None) -> list[list[int
 
 
 def fitness(solver_or_formula: Glucose3 | Cadical195 | CNF, candidate: list[int], estimation_vectors_count: int,
-            zero_conflict_tolerance=False) -> (float, float):
+            conflict_tolerance=ConflictTolerance.NORMAL) -> (float, float):
     solver = solver_or_formula
     if isinstance(solver_or_formula, CNF):
         solver = Glucose3(bootstrap_with=solver_or_formula.clauses)
@@ -83,23 +90,26 @@ def fitness(solver_or_formula: Glucose3 | Cadical195 | CNF, candidate: list[int]
     vectors = random_assumptions(candidate, estimation_vectors_count)
 
     metric = 0
+    metric_with_conflicts = 0
     conflicts_count = 0
     for vector in vectors:
         no_conflicts, result = solver.propagate(vector)
+        metric_with_conflicts += len(result)
 
         if not no_conflicts:
             conflicts_count += 1
-            if zero_conflict_tolerance:
+            if conflict_tolerance == ConflictTolerance.ZERO:
                 return -0.1, 1.01
         else:
             metric += len(result)
 
-    ratio = (
-        # metric / (estimation_vectors_count - conflicts_count) if conflicts_count < estimation_vectors_count else 0,
-        metric / estimation_vectors_count,
-        conflicts_count / estimation_vectors_count
-    )
-    return ratio
+    prop_metric = metric / estimation_vectors_count
+    if conflict_tolerance == ConflictTolerance.HIGH:
+        prop_metric = metric / (
+                    estimation_vectors_count - conflicts_count
+        ) if conflicts_count < estimation_vectors_count else metric_with_conflicts / estimation_vectors_count
+
+    return prop_metric, conflicts_count / estimation_vectors_count
 
 
 def formula_size(f: CNF) -> int:
@@ -226,9 +236,9 @@ def shuffle_cnf(f: CNF, fixed_mapping: dict[int, int]) -> (CNF, dict[int, int]):
     new_var_numbers = vars_for_mapping + []
     random.shuffle(new_var_numbers)
     mapping = {
-        var: new_var
-        for var, new_var in zip(vars_for_mapping, new_var_numbers)
-    } | fixed_mapping
+                  var: new_var
+                  for var, new_var in zip(vars_for_mapping, new_var_numbers)
+              } | fixed_mapping
 
     return apply_mapping(f, mapping), mapping
 
@@ -277,6 +287,23 @@ def remove_miter(lec_instance: CNF) -> (CNF, list[int]):
 
 def percents(ratio: float) -> float:
     return round(ratio * 100, 2)
+
+
+def do_with_time_limit(time_limit_seconds: int = 15, stuck_function=None):
+    def decorate(func):
+        @wraps(func)
+        def wrapper(*args, **wrapper_kwargs):
+            p = multiprocessing.Process(target=func, args=args, kwargs=wrapper_kwargs)
+            p.start()
+            p.join(time_limit_seconds)
+            if p.is_alive():
+                if stuck_function is not None:
+                    stuck_function()
+                    p.kill()
+                    p.join()
+
+        return wrapper
+    return decorate
 
 
 just_timeit = timeit()

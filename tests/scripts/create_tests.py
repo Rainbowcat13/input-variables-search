@@ -9,12 +9,12 @@ from pysat.formula import CNF
 from pysat.solvers import Glucose3
 import aigerox
 
-from util.util import extract_filenames, mkdirs, CNFSchema, create_schemas_lec, map_var, shuffle_cnf, map_vars
+from util.util import extract_filenames, mkdirs, CNFSchema, create_schemas_lec, shuffle_cnf, map_vars, do_with_time_limit
 
 sys.setrecursionlimit(10 ** 9)
 tc = multiprocessing.Value('i', 0)
 fc = multiprocessing.Value('i', 0)
-stat_file = open('stats/inputs.stat', 'w')
+stat_file = open('stats/inputs.stat', 'w+')
 
 
 def try_solve(f, cnt1, cnt2):
@@ -28,13 +28,11 @@ def try_solve(f, cnt1, cnt2):
 
 def check_sat(f):
     print('Try solve...')
-    p = multiprocessing.Process(target=try_solve, args=(f, tc, fc))
-    p.start()
-    p.join(15)
-    if p.is_alive():
-        print('Solving stuck, exiting')
-        p.kill()
-        p.join()
+    do_with_time_limit(
+        time_limit_seconds=15, stuck_function=lambda: print('Solving stuck, exiting')
+    )(try_solve, f)(
+        f, tc, fc
+    )
 
 
 # do not use
@@ -89,6 +87,7 @@ def convert_aig(output_dir, aig, create_lec: bool = False, fix_inputs: bool = Fa
 
     stat_file.write(f'{shuffled.nv}:{len(inputs)}\n')
     shuffled.to_file(f'{output_dir}/cnf/{cnf_filename}')
+    check_sat(shuffled)
     for content, path in zip(
             [inputs, outputs],
             [f'{output_dir}/inputs/{inputs_filename}',
@@ -135,24 +134,24 @@ def create_lec_from_verilog(output_dir, v_dir):
 if __name__ == '__main__':
     tests_dir = 'tests'
 
-    # benchmarks_dirs = ['benchmarks/arithmetic',
-    #                    'benchmarks/random_control',
-    #                    'iwls2024-ls-contest/submissions/USTC_and_Huawei/aig']
-    # aig_files = extract_filenames(benchmarks_dirs, '.aig')
-    # blif_files = extract_filenames(benchmarks_dirs, '.blif')
-    #
-    # files = blif_files
-    # convert_function = convert_blif
-    # if '--aig' in sys.argv:
-    #     convert_function = convert_aig
-    #     files = aig_files
-    # mkdirs(f'{tests_dir}/aag', f'{tests_dir}/aig', f'{tests_dir}/cnf',
-    #        f'{tests_dir}/inputs', f'{tests_dir}/outputs', f'{tests_dir}/lec')
-    # for file in files:
-    #     convert_function(tests_dir, file, create_lec=True)
-    # print(f'SAT formulae: {tc.value}/{len(files)}')
-    # print(f'UNSAT formulae: {fc.value}/{len(files)}')
-    # print(f'Stuck or incorrect formulae: {len(files) - tc.value - fc.value}/{len(files)}')
+    benchmarks_dirs = ['benchmarks/arithmetic',
+                       'benchmarks/random_control',
+                       'iwls2024-ls-contest/submissions/USTC_and_Huawei/aig']
+    aig_files = extract_filenames(benchmarks_dirs, '.aig')
+    blif_files = extract_filenames(benchmarks_dirs, '.blif')
+
+    files = blif_files
+    convert_function = convert_blif
+    if '--aig' in sys.argv:
+        convert_function = convert_aig
+        files = aig_files
+    mkdirs(f'{tests_dir}/aag', f'{tests_dir}/aig', f'{tests_dir}/cnf',
+           f'{tests_dir}/inputs', f'{tests_dir}/outputs', f'{tests_dir}/lec')
+    for file in files:
+        convert_function(tests_dir, file, create_lec=True)
+    print(f'SAT formulae: {tc.value}/{len(files)}')
+    print(f'UNSAT formulae: {fc.value}/{len(files)}')
+    print(f'Stuck or incorrect formulae: {len(files) - tc.value - fc.value}/{len(files)}')
 
     lec_instances_dir = 'hdl-benchmarks/iccad-2015'
     for d in os.listdir(lec_instances_dir):

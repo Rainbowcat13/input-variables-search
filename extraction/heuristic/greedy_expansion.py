@@ -9,7 +9,7 @@ from tqdm import tqdm
 from pysat.formula import CNF
 from pysat.solvers import Glucose3
 
-from util.util import fitness
+from util.util import fitness, ConflictTolerance
 
 ESTIMATION_VECTOR_COUNT = 100
 POOL_SIZE = 8
@@ -17,19 +17,19 @@ POOL_CHUNK_SIZE = 50
 random.seed(22)
 
 
-def fitness_zero_tolerance(f, candidate_with_var, estimation_vector_count, zero_conflict_tolerance):
-    return fitness(f, candidate_with_var, estimation_vector_count, zero_conflict_tolerance=zero_conflict_tolerance)
+def fitness_zero_tolerance(f, candidate_with_var, estimation_vector_count, conflict_tolerance):
+    return fitness(f, candidate_with_var, estimation_vector_count, conflict_tolerance=conflict_tolerance)
 
 
 def count_ratios(f: CNF, candidate: list[int], new_vars: list[int], estimation_vector_count: int,
-                 pool: Pool | None, pool_chunk_size=None, zero_conflict_tolerance=False):
+                 pool: Pool | None, pool_chunk_size=None, conflict_tolerance=ConflictTolerance.NORMAL):
     if pool is not None:
         ratios = pool.starmap(fitness_zero_tolerance, [
             (
                 f,
                 candidate + [var],
                 estimation_vector_count,
-                zero_conflict_tolerance
+                conflict_tolerance
             ) for var in new_vars
         ], chunksize=pool_chunk_size or POOL_CHUNK_SIZE)
     else:
@@ -74,7 +74,7 @@ def expand_one_step(f: CNF, candidate: list[int], sample_size=None,
 def expand(
         f: CNF, pickle: list[int], size_upper_bound: int, sample_size=None, conflict_border=None,
         estimation_vector_count=ESTIMATION_VECTOR_COUNT, pool=None, break_on_decline=False,
-        pool_chunk_size=None, show_progress_bar=True, zero_conflict_tolerance=False, inverted=False
+        pool_chunk_size=None, show_progress_bar=True, conflict_tolerance=ConflictTolerance.NORMAL, inverted=False
 ) -> tuple[list[int], list[int]]:
     candidate = set(pickle)
     non_used = set(range(1, f.nv + 1)) - candidate
@@ -89,19 +89,19 @@ def expand(
     max_prop_cand = None
     while len(candidate) < target:
         cand_list = list(candidate)
-        prop_ratio, _ = fitness(f, cand_list, estimation_vector_count, zero_conflict_tolerance)
+        prop_ratio, _ = fitness(f, cand_list, estimation_vector_count, conflict_tolerance)
         if prop_ratio > max_prop_ratio:
             max_prop_ratio = prop_ratio
             max_prop_cand = cand_list + []
 
         new_vars = list(
-            random.sample(non_used, sample_size)
+            random.sample(list(non_used), sample_size)
             if sample_size is not None and sample_size < len(non_used)
             else non_used
         )
         ratios = count_ratios(f, cand_list, new_vars, estimation_vector_count,
                               pool=pool, pool_chunk_size=pool_chunk_size,
-                              zero_conflict_tolerance=zero_conflict_tolerance)
+                              conflict_tolerance=conflict_tolerance)
         min_conflict_var, min_conflict_ratio = count_good_conflict_var(ratios, new_vars, inverted=inverted)
 
         if any([

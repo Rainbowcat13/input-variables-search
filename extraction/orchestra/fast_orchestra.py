@@ -25,8 +25,6 @@ pool_size = psutil.cpu_count(logical=False)
 # ln(1 - 0.999) / ln(1 - x). Это примерно 7/x, для маленьких схем x~0.01, для больших x~0.001,
 # т. е. примерно 700 и 7000
 # Будем оценивать схему как маленькую, если в ней меньше 10000 переменных, как большую иначе
-# TODO запустить стат-скрипт и посчитать насколько оценка близка к реальности на примерах
-# Запустил, насколько близка хз, ну вроде +- да, разве что для больших схем скорее все-таки меньше, чем 0.001 доля
 def count_sample_size(f: CNF) -> int:
     if f.nv >= 10000:
         return 7000
@@ -93,12 +91,12 @@ def find_inputs(f: CNF, config: Config) -> list[int]:
                       start_set,
                       config.expansion_start_size
                   ), {'show_progress_bar': False, 'inverted': config.inverted}) for start_set in start_sets]
-            ), total=expansion_sample_size, desc='First small expanding', file=sys.stderr))
+            ), total=len(start_sets), desc='First small expanding', file=sys.stderr))
     else:
         start_sets = list(tqdm(
             [expand(f, start_set, config.expansion_start_size, show_progress_bar=False, inverted=config.inverted) for
              start_set in start_sets],
-            total=expansion_sample_size, desc='First small expanding', file=sys.stderr
+            total=len(start_sets), desc='First small expanding', file=sys.stderr
         ))
 
     total_ratios = [(score(f, solver, st[0], config.estimation_vector_count, config.score_method), i)
@@ -117,6 +115,7 @@ def find_inputs(f: CNF, config: Config) -> list[int]:
         (
             f,
             st[0],
+            # min(2 ** (i + 4), config.input_size_upper_bound)
             config.input_size_upper_bound
         ),
         {
@@ -128,11 +127,11 @@ def find_inputs(f: CNF, config: Config) -> list[int]:
                                    if config.big_expansion_no_sample
                                    else expansion_sample_size
                                ) // pool_size,
-            'zero_conflict_tolerance': config.zero_conflict_tolerance,
+            'conflict_tolerance': config.conflict_tolerance,
             'conflict_border': config.expansion_conflict_border,
             'inverted': config.inverted
         })
-    ) for st, _ in best]
+    ) for i, (st, _) in enumerate(best)]
 
     final_candidates = []
     for i, st in enumerate(expanded_sets):
@@ -159,6 +158,8 @@ def find_inputs(f: CNF, config: Config) -> list[int]:
             it += 1
 
     best, pts_best = choose_best(f, solver, final_candidates, config.estimation_vector_count, ScoreMethod.TOTAL)
+    for c in final_candidates:
+        print(*c)
     time.sleep(1)
     sys.stderr.write(f'\nScore: {round(pts_best, 5)}\n')
 
