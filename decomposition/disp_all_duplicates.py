@@ -15,14 +15,14 @@ if __name__ == '__main__':
     # ex_files = list(filter(lambda file: basename_noext(file).startswith('ex'),
     #                        extract_filenames(['answers/extractor'], '.ans')))
     files = extract_filenames(['answers/extractor'], '.ans')
-    stat_file = open('stats/exs_tm.stat', 'w')
+    stat_file = open('../stats/exs_tm.stat', 'w')
 
     for example in files:
         example = basename_noext(example)
         print(example, file=stat_file)
         print(example)
-        ans_file = os.path.join('answers', 'extractor', f'{example}.ans')
-        cnf_file = os.path.join('tests', 'lec', f'{example}_{example}.cnf')
+        ans_file = os.path.join('../answers', 'extractor', f'{example}.ans')
+        cnf_file = os.path.join('../tests', 'lec', f'{example}_{example}.cnf')
         #
         formula = CNF(from_file=cnf_file)
         solver = Cadical195(remove_zeroes(formula))

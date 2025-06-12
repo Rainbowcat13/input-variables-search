@@ -275,6 +275,10 @@ def remove_miter(lec_instance: CNF) -> (CNF, list[int]):
     return CNF(from_clauses=new_clauses), miter
 
 
+def percents(ratio: float) -> float:
+    return round(ratio * 100, 2)
+
+
 just_timeit = timeit()
 if __name__ == '__main__':
     formula = CNF(from_file='tests/cnf/example_formula.cnf')

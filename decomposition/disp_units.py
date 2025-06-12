@@ -17,22 +17,23 @@ if __name__ == '__main__':
     # ex_files = list(filter(lambda file: basename_noext(file).startswith('ex'),
     #                        extract_filenames(['answers/extractor'], '.ans')))
     files = list(filter(lambda fn: 'unit' in fn, extract_filenames(['tests/inputs'], '.inputs')))
-    stat_file = open('stats/units_tm.stat', 'w')
+    stat_file = open('../stats/units_tm.stat', 'w')
 
     for example in files:
         example = basename_noext(example)
         print(example, file=stat_file)
         print(example)
-        ans_file = os.path.join('tests', 'inputs', f'{example}.inputs')
-        cnf_file = os.path.join('tests', 'lec', f'{example}.cnf')
+        ans_file = os.path.join('../tests', 'inputs', f'{example}.inputs')
+        cnf_file = os.path.join('../tests', 'lec', f'{example}.cnf')
         #
         formula = remove_zeroes(CNF(from_file=cnf_file))
         wout_miter, miter = remove_miter(formula)
-        solver = Cadical195(wout_miter)
+        solver = Cadical195(formula)
 
         extractor = InputsExtractor(wout_miter)
-        inputs = extractor.extract()
-        print(*inputs)
+        inputs = extractor.extract(mode=ExtractionMode.FAST)
+        print('ABOBA')
+        # print(*inputs)
         # with open(ans_file, 'w') as af:
         #     af.write(f'{len(inputs)}\n{" ".join(map(str, inputs))}\n')
         #
@@ -41,10 +42,14 @@ if __name__ == '__main__':
         # except Exception as e:
         #     print(e)
         #     continue
+        print(len(inputs))
         rnd_vars = random.sample(list(range(1, formula.nv + 1)), len(inputs))
 
-        assumptions_inp = random_assumptions(inputs, num_assumptions=10000)
-        assumptions_rnd = random_assumptions(rnd_vars, num_assumptions=10000)
+        print(inputs)
+        print(rnd_vars)
+
+        assumptions_inp = random_assumptions(inputs, num_assumptions=1000)
+        assumptions_rnd = random_assumptions(rnd_vars, num_assumptions=1000)
         #
         tms_inp = []
         tms_rnd = []

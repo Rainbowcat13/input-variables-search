@@ -1,3 +1,4 @@
+import random
 import sys
 
 from pysat.formula import CNF
@@ -6,19 +7,14 @@ from scipy import stats
 from tqdm import tqdm
 
 from extraction.extractor import InputsExtractor
-from util.util import random_assumptions, xor_cnf, CNFSchema, create_schemas_lec, timeit, remove_zeroes, inputs_outputs
+from util.util import random_assumptions, xor_cnf, CNFSchema, create_schemas_lec, timeit, remove_zeroes, inputs_outputs, \
+    remove_miter
 
 TASKS_COUNT = 200
 
 
 def extract_inputs(lec_instance: CNF):
     return InputsExtractor(lec_instance).extract()
-
-
-def remove_miter(lec_instance: CNF) -> (CNF, list[int]):
-    miter = max(lec_instance.clauses, key=lambda clause: len(clause))
-    (new_clauses := lec_instance.clauses + []).remove(miter)
-    return CNF(from_clauses=new_clauses), miter
 
 
 def construct_lambdas(inputs: list[int], max_var_num: int) -> (list[list[int]], list[int]):
@@ -38,7 +34,7 @@ def construct_lambdas(inputs: list[int], max_var_num: int) -> (list[list[int]], 
 def estimate_lec(lec_instance: CNF, inputs: list[int]) -> list[float]:
     lambdas, new_inputs = construct_lambdas(inputs, lec_instance.nv + 1)
 
-    lec_with_lambdas = CNF(from_clauses=lec_instance.clauses + lambdas)
+    lec_with_lambdas = remove_zeroes(CNF(from_clauses=lec_instance.clauses + lambdas))
     tasks = random_assumptions(new_inputs, TASKS_COUNT)
     solver = Glucose3(bootstrap_with=lec_with_lambdas.clauses)
     times = []
@@ -55,10 +51,11 @@ def estimate_lec(lec_instance: CNF, inputs: list[int]) -> list[float]:
     return times
 
 
-def estimation(lec_instance: CNF):
+def estimation(lec_instance: CNF, inputs=None):
     lec_without_miter, miter = remove_miter(lec_instance)
     inputs = extract_inputs(lec_without_miter)
-    print(inputs)
+    inputs = random.sample(list(range(1, lec_instance.nv + 1)), len(inputs))
+    # print(inputs)
 
     time_estimations = estimate_lec(lec_instance, inputs)
 
@@ -72,17 +69,17 @@ def estimation(lec_instance: CNF):
 
 if __name__ == '__main__':
     adder = CNFSchema(
-        CNF(from_file='tests/cnf/adder.cnf'),
-        inputs_outputs('tests/inputs/adder.inputs'),
-        inputs_outputs('tests/outputs/adder.outputs')
+        CNF(from_file='../tests/cnf/adder.cnf'),
+        inputs_outputs('../tests/inputs/adder.inputs'),
+        inputs_outputs('../tests/outputs/adder.outputs')
     )
 
     xor = CNFSchema(
-        CNF(from_file='tests/cnf/xor_gate.cnf'),
-        inputs_outputs('tests/inputs/xor_gate.inputs'),
-        inputs_outputs('tests/outputs/xor_gate.outputs')
+        CNF(from_file='../tests/cnf/xor_gate.cnf'),
+        inputs_outputs('../tests/inputs/xor_gate.inputs'),
+        inputs_outputs('../tests/outputs/xor_gate.outputs')
     )
 
-    lec = remove_zeroes(CNF(from_file='tests/lec/unit10.cnf'))
+    lec = remove_zeroes(CNF(from_file='../tests/lec/unit10.cnf'))
 
     estimation(lec)

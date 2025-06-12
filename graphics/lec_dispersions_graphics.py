@@ -3,10 +3,6 @@ import random
 
 import matplotlib.pyplot as plt
 import numpy as np
-from pysat.formula import CNF
-
-import lec
-from util.util import mkdirs
 
 if __name__ == '__main__':
     path_to_lec = 'stats/lec'

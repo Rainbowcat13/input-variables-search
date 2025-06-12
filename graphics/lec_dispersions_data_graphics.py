@@ -1,10 +1,9 @@
 import os
 
-import matplotlib.pyplot as plt
 import numpy as np
 from pysat.formula import CNF
 
-import lec
+from decomposition import lec
 from util.util import mkdirs, inputs_outputs
 
 if __name__ == '__main__':
