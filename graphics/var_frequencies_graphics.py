@@ -7,7 +7,7 @@ from pysat.formula import CNF
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from util.util import var_frequency, extract_filenames, basename_noext, inputs_outputs
+from util.util import var_frequency, basename_noext, inputs_outputs
 
 
 CHUNKS_COUNT = 10

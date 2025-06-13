@@ -1,3 +1,4 @@
+import multiprocessing
 import random
 import sys
 
@@ -7,6 +8,15 @@ from pysat.solvers import Cadical195
 from tqdm import tqdm
 
 from util.util import random_assumptions, timeit, do_with_time_limit, construct_lambdas
+
+
+def solve(f: CNF, a: list[int]):
+    return Cadical195(bootstrap_with=f.clauses).solve(a)
+
+
+def inc(v: multiprocessing.Value):
+    with v.get_lock():
+        v.value += 1
 
 
 class DecompositionEstimation:
@@ -34,26 +44,35 @@ class DecompositionEstimation:
 
     def estimate(self, variables: list[int], use_lambdas=False) -> (list[float], int, int):
         est_vars = variables + []
-        solver = self.solver
+        formula = self.formula
         if use_lambdas:
             lambdas, outputs = construct_lambdas(variables, self.formula.nv + 1)
             est_vars = outputs
-            solver = Cadical195(bootstrap_with=CNF(from_clauses=self.formula.clauses + lambdas))
+            formula = CNF(from_clauses=self.formula.clauses + lambdas)
 
-        tms = self._calc_times(est_vars, solver)
-        return tms, np.var(tms), np.mean(tms) * (2 ** len(est_vars))
+        tms = self._calc_times(est_vars, formula)
+        return tms, np.var(tms), np.mean(tms)
 
-    def _calc_times(self, variables: list[int], solver=None) -> list[int]:
-        if solver is None:
-            solver = self.solver
+    def _calc_times(self, variables: list[int], formula=None) -> list[int]:
+        if formula is None:
+            formula = self.formula
         assumptions = random_assumptions(variables, num_assumptions=self.estimation_vector_count)
         result = []
+        stuck_cnt = multiprocessing.Value('i', 0)
         for a in tqdm(assumptions, desc='Assumptions solved', file=sys.stderr):
             timeit(
                 callback_func=lambda tm: result.append(tm)
             )(
-                lambda: do_with_time_limit(time_limit_seconds=self.assumption_time_limit)(solver.solve(a))()
-            )()
+                do_with_time_limit(
+                    time_limit_seconds=self.assumption_time_limit,
+                    stuck_function=lambda: inc(stuck_cnt)
+                )(solve)
+            )(formula, a)
+
+            with stuck_cnt.get_lock():
+                if stuck_cnt.value >= self.estimation_vector_count // 10:
+                    result.extend([self.assumption_time_limit] * (self.estimation_vector_count - len(result)))
+                    break
         return result
 
     def print_stats(self, use_lambdas=False, file=None):
@@ -61,8 +80,10 @@ class DecompositionEstimation:
               file=file, flush=True)
         print(f'Variance possible input: {self.var_inputs:.9f}', file=file, flush=True)
         print(f'Variance random: {self.var_random:.9f}', file=file, flush=True)
-        print(f'Prediction possible input, seconds: {self.estimation_inputs:.9f}', file=file, flush=True)
-        print(f'Prediction random, seconds: {self.estimation_random:.9f}', file=file, flush=True)
+        print(f'Mean possible input, seconds (var count): {self.estimation_inputs:.9f} ({len(self.times_random)})',
+              file=file, flush=True)
+        print(f'Mean random, seconds (var count): {self.estimation_random:.9f} ({len(self.times_random)})',
+              file=file, flush=True)
         print('Random times: ', file=file, flush=True)
         print(' '.join(map(str, self.times_random)), file=file, flush=True)
         print('Possible input times: ', file=file, flush=True)

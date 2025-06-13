@@ -1,4 +1,5 @@
 import os
+from multiprocessing import freeze_support
 
 from pysat.formula import CNF
 
@@ -22,18 +23,21 @@ def estimate_lecs(formulas: list[(CNF, str)], inputs: list[list[int]] | None = N
                 lec_without_miter, miter = remove_miter(lec_instance)
                 inp = extract_inputs(lec_without_miter)
 
+                print(os.path.join('answers', 'extractor', f'{basename_noext(name)}.ans'))
                 ans_file = open(os.path.join('answers', 'extractor', f'{basename_noext(name)}.ans'), 'w')
                 print(len(inp), file=ans_file)
                 print(*inp, file=ans_file)
 
-            # d = DecompositionEstimation(lec_instance, inp, assumption_time_limit=20)
-            # d.print_stats(use_lambdas=True, file=stat_file)
+            d = DecompositionEstimation(lec_instance, inp, assumption_time_limit=20)
+            d.print_stats(use_lambdas=True, file=stat_file)
         except Exception as e:
             print(e)
             continue
 
 
 if __name__ == '__main__':
+    freeze_support()
+
     stat_file = open(os.path.join('stats', 'decomposition_stat_no_lambdas.stat'), 'w+')
     filenames_cnf = extract_filenames([os.path.join('tests', 'lec')], '.cnf')
     units = [fn for fn in filenames_cnf if 'unit' in fn]
@@ -56,8 +60,6 @@ if __name__ == '__main__':
     print(units)
     # print(filenames_cnf)
 
-    # estimate_lecs([remove_zeroes(CNF(from_file=fn)) for fn in filenames_cnf],
-    #               [inputs_outputs(fn) for fn in filenames_answers])
-
     estimate_lecs([(remove_zeroes(CNF(from_file=fn)), fn) for fn in units],
                   None)
+

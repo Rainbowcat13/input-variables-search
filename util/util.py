@@ -282,6 +282,8 @@ def inputs_outputs(filename):
 def remove_miter(lec_instance: CNF) -> (CNF, list[int]):
     miter = max(lec_instance.clauses, key=lambda clause: len(clause))
     (new_clauses := lec_instance.clauses + []).remove(miter)
+    comb_outputs = set(assumption_key(miter))
+    new_clauses = [clause for clause in new_clauses if len(set(assumption_key(clause)) & comb_outputs) == 0]
     return CNF(from_clauses=new_clauses), miter
 
 

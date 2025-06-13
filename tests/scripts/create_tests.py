@@ -30,7 +30,7 @@ def check_sat(f):
     print('Try solve...')
     do_with_time_limit(
         time_limit_seconds=15, stuck_function=lambda: print('Solving stuck, exiting')
-    )(try_solve, f)(
+    )(try_solve)(
         f, tc, fc
     )
 

@@ -18,7 +18,7 @@ if __name__ == '__main__':
 
         f = CNF(from_file=os.path.join('tests', 'sat2021', f'{formula_name}.cnf'))
         possible_inputs = inputs_outputs(os.path.join(sat2021_answers_dir, ans_file))
-        d = DecompositionEstimation(formula=f, inputs=possible_inputs, assumption_time_limit=10)
+        d = DecompositionEstimation(formula=f, inputs=possible_inputs, assumption_time_limit=5)
 
         pts_prop = score(f, d.solver, possible_inputs, ESTIMATION_VECTOR_COUNT, ScoreMethod.PROP)
         pts_cfl = score(f, d.solver, possible_inputs, ESTIMATION_VECTOR_COUNT, ScoreMethod.CONFLICTS)
