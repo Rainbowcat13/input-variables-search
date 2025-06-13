@@ -3,42 +3,52 @@ import os
 import numpy as np
 from pysat.formula import CNF
 
-from decomposition import lec
-from util.util import mkdirs, inputs_outputs
+from decomposition.lec import compare_inputs
+from util.util import mkdirs
+
+
+def var_coeff(tms):
+    tms = np.array(tms, dtype=float)
+    mu = tms.mean()
+    sigma = tms.std(ddof=0)
+
+    return sigma / mu if mu != 0 else np.nan
+
 
 if __name__ == '__main__':
-    path_to_lec = 'tests/lec'
-    not_wanted = [
-        "arbiter.cnf", "bar.cnf", "dec.cnf", "div.cnf", "hyp.cnf", "i2c.cnf",
-        "int2float.cnf", "log2.cnf",
-        "max.cnf", "multiplier.cnf", "priority.cnf", "router.cnf", "sin.cnf", "sqrt.cnf", "square.cnf",
-        "voter.cnf"
-    ]
+    path_to_lec = os.path.join('tests', 'lec')
+
+    mkdirs('stats/lec2')
+
+    lec_instances = [(CNF(from_file=os.path.join(path_to_lec, lec_instance_file)),
+                      lec_instance_file.replace('.cnf', ''))
+                     for lec_instance_file in os.listdir(path_to_lec)]
+
+    lec_instances.sort(key=lambda li: li[0].nv)
 
     var_coeffs = []
-    mkdirs('stats/lec')
-    for lec_instance_file in os.listdir('tests/lec'):
-        if lec_instance_file.split('_')[-1] in not_wanted:
-            print('skip')
+    for lec_instance, schema_name in lec_instances:
+        schema_subname = schema_name.split('_')[0]
+        if 'unit' in schema_subname:
             continue
-        nm = lec_instance_file.replace('.cnf', '')
-        stat_file = os.path.join('stats/lec', nm + '_ideal.stat')
-        lec_instance = CNF(from_file=os.path.join(path_to_lec, lec_instance_file))
+        print(schema_subname)
 
-        try:
-            inputs = inputs_outputs(f'tests/inputs/{nm.split("_")[0]}.inputs')
-        except:
+        inp_file = os.path.join('tests', 'inputs', f'{schema_subname}.inputs')
+        ans_file = os.path.join('answers', 'extractor', f'{schema_subname}.ans')
+
+        cmp = compare_inputs(lec_instance, inp_file, ans_file)
+        if cmp is None:
+            print('Damaged')
             continue
-        estimation = lec.estimation(lec_instance, inputs=inputs)
+        tms_inputs, tms_answer, tms_random = cmp
 
-        with open(stat_file, 'w') as sf:
-            sf.write(' '.join(map(str, estimation)))
-
-        estimation = np.array(estimation, dtype=float)
-        mu = estimation.mean()
-        sigma = estimation.std(ddof=0)
         # коэффициент вариации, чтобы не зависеть от величины времени дисперсии
-        var_coeffs.append(sigma / mu if mu != 0 else np.nan)
+        var_coeffs.append((var_coeff(tms_inputs), var_coeff(tms_answer), var_coeff(tms_random)))
 
-    with open('stats/lec/cov_stat_total_random.stat', 'w') as cov_total:
-        cov_total.write(' '.join(map(str, filter(lambda x: not np.isnan(x), var_coeffs))))
+    var_coeffs_filtered = list(filter(lambda x: all(not np.isnan(y) for y in x), var_coeffs))
+
+    print(var_coeffs_filtered)
+    with open('stats/lec/covariance_stat_all.stat', 'w') as cov_total:
+        cov_total.write('\n'.join(
+            f'{x[0]} {x[1]} {x[2]}' for x in var_coeffs_filtered
+        ))

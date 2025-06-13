@@ -35,6 +35,25 @@ def estimate_lecs(formulas: list[(CNF, str)], inputs: list[list[int]] | None = N
             continue
 
 
+def compare_inputs(formula: CNF, ideal_file, found_file, res_file=None) -> (list[float], list[float], list[float]):
+    try:
+        ideal = inputs_outputs(ideal_file)
+        found = inputs_outputs(found_file)
+    except Exception as e:
+        print(e)
+        return None
+
+    d = DecompositionEstimation(formula, ideal, assumption_time_limit=10, estimation_vector_count=150)
+    d.print_stats(file=res_file)
+
+    d2 = DecompositionEstimation(formula, found, assumption_time_limit=10, estimation_vector_count=150)
+    d2.compare_with_random(use_lambdas=True)
+
+    random_times = d.times_random if len(ideal) < len(found) else d2.times_random
+
+    return d.times_inputs, d2.times_inputs, random_times
+
+
 if __name__ == '__main__':
     freeze_support()
 

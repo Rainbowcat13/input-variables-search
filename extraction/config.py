@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 
-from util.util import ScoreMethod
+from util.util import ScoreMethod, ConflictTolerance
 
 
 @dataclass
 class Config:
     random_seed: int = 13
     break_on_decline: bool = True
-    zero_conflict_tolerance: bool = False
+    conflict_tolerance: ConflictTolerance = ConflictTolerance.NORMAL
     expansion_conflict_border: float = 0.45
     estimation_vector_count: int = 250
     big_expansion_no_sample: bool = False
@@ -27,7 +27,7 @@ class Config:
 CONFIG_FULL = Config(
     random_seed=13,
     break_on_decline=False,
-    zero_conflict_tolerance=False,
+    conflict_tolerance=ConflictTolerance.NORMAL,
     expansion_conflict_border=0.9,
     estimation_vector_count=1000,
     big_expansion_no_sample=True,
@@ -46,7 +46,7 @@ CONFIG_FULL = Config(
 CONFIG_PART = Config(
     random_seed=13,
     break_on_decline=False,
-    zero_conflict_tolerance=False,
+    conflict_tolerance=ConflictTolerance.NORMAL,
     expansion_conflict_border=0.9,
     estimation_vector_count=1000,
     big_expansion_no_sample=True,
@@ -65,7 +65,7 @@ CONFIG_PART = Config(
 CONFIG_STANDARD = Config(
     random_seed=13,
     break_on_decline=False,
-    zero_conflict_tolerance=False,
+    conflict_tolerance=ConflictTolerance.NORMAL,
     expansion_conflict_border=0.9,
     estimation_vector_count=500,
     big_expansion_no_sample=False,
@@ -84,8 +84,8 @@ CONFIG_STANDARD = Config(
 CONFIG_CLIPPED = Config(
     random_seed=13,
     break_on_decline=True,
-    zero_conflict_tolerance=False,
-    expansion_conflict_border=0.3,
+    conflict_tolerance=ConflictTolerance.NORMAL,
+    expansion_conflict_border=0.45,
     estimation_vector_count=100,
     big_expansion_no_sample=False,
     small_expansion_no_sample=False,
@@ -94,7 +94,7 @@ CONFIG_CLIPPED = Config(
     score_method=ScoreMethod.TOTAL,
     use_pool=True,
     evolution_generations_count=1000,
-    expansion_start_size=3,
+    expansion_start_size=4,
     expansion_sample_size=7000,
     cut_iterations_count=5,
     cut_conflict_border=0.0
@@ -103,55 +103,55 @@ CONFIG_CLIPPED = Config(
 CONFIG_SMALL = Config(
     random_seed=13,
     break_on_decline=True,
-    zero_conflict_tolerance=True,
+    conflict_tolerance=ConflictTolerance.ZERO,
     expansion_conflict_border=0.1,
     estimation_vector_count=100,
     big_expansion_no_sample=False,
     small_expansion_no_sample=False,
     input_size_upper_bound=2048,
-    expansion_candidates_count=1,
+    expansion_candidates_count=2,
     score_method=ScoreMethod.TOTAL,
     use_pool=True,
-    evolution_generations_count=250,
+    evolution_generations_count=1000,
     expansion_start_size=2,
     expansion_sample_size=7500,
-    cut_iterations_count=5,
+    cut_iterations_count=100,
     cut_conflict_border=0.0
 )
 
 CONFIG_NON_SCHEMAS = Config(
     random_seed=13,
     break_on_decline=False,
-    zero_conflict_tolerance=False,
-    expansion_conflict_border=0.9,
+    conflict_tolerance=ConflictTolerance.HIGH,
+    expansion_conflict_border=1,
     estimation_vector_count=100,
     big_expansion_no_sample=False,
     small_expansion_no_sample=False,
-    input_size_upper_bound=2048,
+    input_size_upper_bound=500,
     expansion_candidates_count=1,
     score_method=ScoreMethod.TOTAL,
     use_pool=True,
     evolution_generations_count=1000,
     expansion_start_size=3,
     expansion_sample_size=7500,
-    cut_iterations_count=2,
+    cut_iterations_count=0,
     cut_conflict_border=0.0
 )
 
 CONFIG_SAT = Config(
     random_seed=13,
     break_on_decline=False,
-    zero_conflict_tolerance=False,
+    conflict_tolerance=ConflictTolerance.HIGH,
     expansion_conflict_border=1.1,
     estimation_vector_count=100,
-    big_expansion_no_sample=True,
+    big_expansion_no_sample=False,
     small_expansion_no_sample=True,
-    input_size_upper_bound=100,
+    input_size_upper_bound=500,
     expansion_candidates_count=1,
-    score_method=ScoreMethod.TOTAL,
+    score_method=ScoreMethod.PROP,
     use_pool=True,
     evolution_generations_count=1000,
-    expansion_start_size=3,
+    expansion_start_size=10,
     expansion_sample_size=7500,
     cut_iterations_count=0,
     cut_conflict_border=0.0,
