@@ -9,7 +9,7 @@ ESTIMATION_VECTOR_COUNT = 1000
 
 
 if __name__ == '__main__':
-    sat2021_answers_dir = os.path.join('.', 'answers', 'sat2021')
+    sat2021_answers_dir = os.path.join('answers', 'sat2021')
     sat2021_answers = os.listdir(sat2021_answers_dir)
 
     for ans_file in sat2021_answers:
@@ -28,7 +28,4 @@ if __name__ == '__main__':
         print(f'Points propagation: {percents(pts_prop)}%')
         print(f'Conflicts ratio: {percents(-pts_cfl)}%')
 
-        print(f'Is variance better with inputs? {"Yes" if d.compare_with_random() else "No"}')
-        print(f'Variance possible input: {d.var_inputs:.9f}')
-        print(f'Variance random: {d.var_random:.9f}')
-        print()
+        d.print_stats(use_lambdas=True)

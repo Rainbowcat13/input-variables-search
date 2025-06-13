@@ -1,84 +1,63 @@
-import random
-import sys
+import os
 
 from pysat.formula import CNF
-from pysat.solvers import Glucose3
-from scipy import stats
-from tqdm import tqdm
 
+from decomposition.estimation import DecompositionEstimation
 from extraction.extractor import InputsExtractor
-from util.util import random_assumptions, xor_cnf, CNFSchema, create_schemas_lec, timeit, remove_zeroes, inputs_outputs, \
-    remove_miter
-
-TASKS_COUNT = 200
+from util.util import inputs_outputs, remove_miter, extract_filenames, basename_noext, remove_zeroes
 
 
 def extract_inputs(lec_instance: CNF):
     return InputsExtractor(lec_instance).extract()
 
 
-def construct_lambdas(inputs: list[int], max_var_num: int) -> (list[list[int]], list[int]):
-    lambdas = []
-    lambdas_outputs = []
-    n = len(inputs)
-    for i in range(0, n - 1, 2):
-        lambdas_outputs.append(max_var_num)
-        lambdas.extend(xor_cnf(inputs[i], inputs[i + 1], max_var_num))
-        max_var_num += 1
-    if n % 2 == 1:
-        lambdas_outputs.append(inputs[-1])
+def estimate_lecs(formulas: list[(CNF, str)], inputs: list[list[int]] | None = None):
+    for (lec_instance, name), inp in zip(formulas, inputs or [None] * len(formulas)):
+        if '01' in name:
+            continue
+        try:
+            print(name)
+            print('smth', file=stat_file, flush=True)
+            if inp is None:
+                lec_without_miter, miter = remove_miter(lec_instance)
+                inp = extract_inputs(lec_without_miter)
 
-    return lambdas, lambdas_outputs
+                ans_file = open(os.path.join('answers', 'extractor', f'{basename_noext(name)}.ans'), 'w')
+                print(len(inp), file=ans_file)
+                print(*inp, file=ans_file)
 
-
-def estimate_lec(lec_instance: CNF, inputs: list[int]) -> list[float]:
-    lambdas, new_inputs = construct_lambdas(inputs, lec_instance.nv + 1)
-
-    lec_with_lambdas = remove_zeroes(CNF(from_clauses=lec_instance.clauses + lambdas))
-    tasks = random_assumptions(new_inputs, TASKS_COUNT)
-    solver = Glucose3(bootstrap_with=lec_with_lambdas.clauses)
-    times = []
-
-    for task in tqdm(tasks, desc='Checking assumptions', file=sys.stderr):
-        result = timeit(callback_func=lambda tm: times.append(tm))(lambda: solver.solve(task))()
-        if result:
-            sys.stderr.write('SAT found. Exiting.\n')
-            sys.stderr.write(f'Model: {solver.get_model()}')
-            break
-    else:
-        sys.stderr.write(f'Cannot find SAT on {TASKS_COUNT} examples.\n')
-
-    return times
-
-
-def estimation(lec_instance: CNF, inputs=None):
-    lec_without_miter, miter = remove_miter(lec_instance)
-    inputs = extract_inputs(lec_without_miter)
-    inputs = random.sample(list(range(1, lec_instance.nv + 1)), len(inputs))
-
-    time_estimations = estimate_lec(lec_instance, inputs)
-
-    dsc = stats.describe(time_estimations, ddof=1)
-    sys.stderr.write(f'Dispersion: {dsc.variance:.9f}\n')
-
-    total_time_prediction = (sum(time_estimations) / TASKS_COUNT) * 2 ** (len(inputs) - 1)
-    sys.stderr.write(f'Based on inputs SAT solving will take approximately {total_time_prediction} s.\n')
-    return time_estimations
+            # d = DecompositionEstimation(lec_instance, inp, assumption_time_limit=20)
+            # d.print_stats(use_lambdas=True, file=stat_file)
+        except Exception as e:
+            print(e)
+            continue
 
 
 if __name__ == '__main__':
-    adder = CNFSchema(
-        CNF(from_file='../tests/cnf/adder.cnf'),
-        inputs_outputs('../tests/inputs/adder.inputs'),
-        inputs_outputs('../tests/outputs/adder.outputs')
-    )
+    stat_file = open(os.path.join('stats', 'decomposition_stat_no_lambdas.stat'), 'w+')
+    filenames_cnf = extract_filenames([os.path.join('tests', 'lec')], '.cnf')
+    units = [fn for fn in filenames_cnf if 'unit' in fn]
+    filenames_answers = extract_filenames([os.path.join('answers', 'extractor')], '.ans')
 
-    xor = CNFSchema(
-        CNF(from_file='../tests/cnf/xor_gate.cnf'),
-        inputs_outputs('../tests/inputs/xor_gate.inputs'),
-        inputs_outputs('../tests/outputs/xor_gate.outputs')
-    )
+    filenames_answers = [fn for fn in filenames_answers if os.stat(fn).st_size > 0]
 
-    lec = remove_zeroes(CNF(from_file='../tests/lec/unit10.cnf'))
+    filenames_cnf_noext = [basename_noext(fn) for fn in filenames_cnf]
+    filenames_answers_noext = set([basename_noext(fn) for fn in filenames_answers])
 
-    estimation(lec)
+    filenames_cnf_noext = [fn for fn in filenames_cnf_noext
+                           if fn in filenames_answers_noext or
+                           fn.split('_')[0] in filenames_answers_noext]
+
+    filenames_cnf = [os.path.join('tests', 'lec', f'{fn}.cnf') for fn in filenames_cnf_noext]
+
+    filenames_cnf.sort()
+    filenames_answers.sort()
+    units.sort(key=lambda x: CNF(from_file=x).nv)
+    print(units)
+    # print(filenames_cnf)
+
+    # estimate_lecs([remove_zeroes(CNF(from_file=fn)) for fn in filenames_cnf],
+    #               [inputs_outputs(fn) for fn in filenames_answers])
+
+    estimate_lecs([(remove_zeroes(CNF(from_file=fn)), fn) for fn in units],
+                  None)

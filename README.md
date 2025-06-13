@@ -40,7 +40,7 @@ SAT-решатель — программа, решающая задачу SAT.
 
 ### Ресурсы
 
-[Презентация по теме](https://drive.google.com/file/d/15zwziUkcqTlDSE9VIPvaaTykMrNnmGb0/view?usp=sharing)
+[Презентация по теме](https://drive.google.com/file/d/1vIiNLZpAB92Bx0ogQV60w1fJtJ79Athq/view?usp=drive_link)
 
 ## Подготовка
 

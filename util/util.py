@@ -8,7 +8,6 @@ import sys
 import time
 from enum import Enum
 from functools import wraps
-from pathlib import Path
 from collections import Counter
 from itertools import combinations
 from dataclasses import dataclass
@@ -48,8 +47,8 @@ def assumption_key(assumption):
     return list(map(abs, assumption))
 
 
-def precount_set_order(formula: CNF, solver: Glucose3 | Cadical195, level=2):
-    assumptions = list(combinations(list(range(1, formula.nv + 1)), level))
+def precount_set_order(f: CNF, solver: Glucose3 | Cadical195, level=2):
+    assumptions = list(combinations(list(range(1, f.nv + 1)), level))
     assumptions_count = len(assumptions)
     outputs = [0] * assumptions_count
     for index in range(assumptions_count):
@@ -106,7 +105,7 @@ def fitness(solver_or_formula: Glucose3 | Cadical195 | CNF, candidate: list[int]
     prop_metric = metric / estimation_vectors_count
     if conflict_tolerance == ConflictTolerance.HIGH:
         prop_metric = metric / (
-                    estimation_vectors_count - conflicts_count
+                estimation_vectors_count - conflicts_count
         ) if conflicts_count < estimation_vectors_count else metric_with_conflicts / estimation_vectors_count
 
     return prop_metric, conflicts_count / estimation_vectors_count
@@ -125,14 +124,14 @@ def extremum_indices(ratios: list[float]) -> list[int]:
 
 
 def extract_filenames(dirs, extension):
-    return [
-        str(file.absolute())
-        for file in sum([
-            list(Path(d).glob('**/*'))
-            for d in dirs
-        ], [])
-        if file.name.endswith(extension)
-    ]
+    return sum([
+        [
+            os.path.join(d, file)
+            for file in os.listdir(d)
+            if file.endswith(extension)
+        ]
+        for d in dirs
+    ], [])
 
 
 def basename_noext(filename):
@@ -267,6 +266,7 @@ def timeit(callback_func=None):
             return result
 
         return wrapper
+
     return decorate
 
 
@@ -303,13 +303,28 @@ def do_with_time_limit(time_limit_seconds: int = 15, stuck_function=None):
                     p.join()
 
         return wrapper
+
     return decorate
+
+
+def construct_lambdas(inputs: list[int], max_var_num: int) -> (list[list[int]], list[int]):
+    lambdas = []
+    lambdas_outputs = []
+    n = len(inputs)
+    for i in range(0, n - 1, 2):
+        lambdas_outputs.append(max_var_num)
+        lambdas.extend(xor_cnf(inputs[i], inputs[i + 1], max_var_num))
+        max_var_num += 1
+    if n % 2 == 1:
+        lambdas_outputs.append(inputs[-1])
+
+    return lambdas, lambdas_outputs
 
 
 just_timeit = timeit()
 if __name__ == '__main__':
-    formula = CNF(from_file='tests/cnf/example_formula.cnf')
-    g = Glucose3(formula.clauses)
-    print(precount_set_order(formula, g, level=3))
-    print(var_frequency(formula))
-    print(extremum_indices([1, 2, 3, 4, 5, 4, 6, 7, 8, 0]))
+    formula = CNF(from_file='tests/lec/unit02.cnf')
+    wm, m = remove_miter(formula)
+
+    print(wm)
+    print(m)

@@ -6,8 +6,7 @@ from pysat.formula import CNF
 from pysat.solvers import Cadical195
 from tqdm import tqdm
 
-from decomposition.lec import construct_lambdas
-from util.util import random_assumptions, timeit, do_with_time_limit
+from util.util import random_assumptions, timeit, do_with_time_limit, construct_lambdas
 
 
 class DecompositionEstimation:
@@ -56,3 +55,17 @@ class DecompositionEstimation:
                 lambda: do_with_time_limit(time_limit_seconds=self.assumption_time_limit)(solver.solve(a))()
             )()
         return result
+
+    def print_stats(self, use_lambdas=False, file=None):
+        print(f'Is variance better with inputs? {"Yes" if self.compare_with_random(use_lambdas) else "No"}',
+              file=file, flush=True)
+        print(f'Variance possible input: {self.var_inputs:.9f}', file=file, flush=True)
+        print(f'Variance random: {self.var_random:.9f}', file=file, flush=True)
+        print(f'Prediction possible input, seconds: {self.estimation_inputs:.9f}', file=file, flush=True)
+        print(f'Prediction random, seconds: {self.estimation_random:.9f}', file=file, flush=True)
+        print('Random times: ', file=file, flush=True)
+        print(' '.join(map(str, self.times_random)), file=file, flush=True)
+        print('Possible input times: ', file=file, flush=True)
+        print(' '.join(map(str, self.times_inputs)), file=file, flush=True)
+        print(file=file, flush=True)
+        print('Written')
