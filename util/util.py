@@ -323,6 +323,14 @@ def construct_lambdas(inputs: list[int], max_var_num: int) -> (list[list[int]], 
     return lambdas, lambdas_outputs
 
 
+def var_coeff(tms):
+    tms = np.array(tms, dtype=float)
+    mu = tms.mean()
+    sigma = tms.std(ddof=0)
+
+    return sigma / mu if mu != 0 else np.nan
+
+
 just_timeit = timeit()
 if __name__ == '__main__':
     formula = CNF(from_file='tests/lec/unit02.cnf')

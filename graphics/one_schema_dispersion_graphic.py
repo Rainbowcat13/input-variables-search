@@ -44,7 +44,7 @@ def disp_graphic(data_inputs: list[float],
     x = list(range(1, len(inp) + 1))
 
     plt.xticks(fontsize=40)
-    plt.yticks(fontsize=40)
+    plt.yticks(fontsize=100)
 
     if ideal is not None:
         ideal_mean, ideal_std = ideal.mean(), ideal.std(ddof=0)
@@ -56,9 +56,9 @@ def disp_graphic(data_inputs: list[float],
                          color='lightgreen', alpha=0.1,
                          label=f'±1σ идеального ({ideal_std:.8f})')
 
-        ci, li = 'gold', 'Дисперсия на входах'
-        cm, ls = 'orange', 'Среднее входов'
-        cf = 'lightyellow'
+        ci, li = 'blue', 'Дисперсия на входах'
+        cm, ls = 'darkblue', 'Среднее входов'
+        cf = 'lightblue'
     else:
         ci, li = 'green', 'Дисперсия на входах'
         cm, ls = 'cyan', 'Среднее входов'

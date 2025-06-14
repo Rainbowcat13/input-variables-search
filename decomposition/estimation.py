@@ -80,9 +80,9 @@ class DecompositionEstimation:
               file=file, flush=True)
         print(f'Variance possible input: {self.var_inputs:.9f}', file=file, flush=True)
         print(f'Variance random: {self.var_random:.9f}', file=file, flush=True)
-        print(f'Mean possible input, seconds (var count): {self.estimation_inputs:.9f} ({len(self.times_random)})',
+        print(f'Mean possible input, seconds (var count): {self.estimation_inputs:.9f} ({len(self.inputs)})',
               file=file, flush=True)
-        print(f'Mean random, seconds (var count): {self.estimation_random:.9f} ({len(self.times_random)})',
+        print(f'Mean random, seconds (var count): {self.estimation_random:.9f} ({len(self.inputs)})',
               file=file, flush=True)
         print('Random times: ', file=file, flush=True)
         print(' '.join(map(str, self.times_random)), file=file, flush=True)
